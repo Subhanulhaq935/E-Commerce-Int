@@ -1,8 +1,11 @@
 import os
 import sys
+from dotenv import load_dotenv
 
 # Ensure root path is accessible
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+load_dotenv()
 
 from app.core.database import SessionLocal
 from app.core.security import hash_password
@@ -12,9 +15,14 @@ from app.repositories.user_repository import UserRepository
 
 
 def create_admin():
-    email = os.getenv("ADMIN_EMAIL", "admin@example.com")
-    password = os.getenv("ADMIN_PASSWORD", "Admin@12345")
+    email = os.getenv("ADMIN_EMAIL")
+    password = os.getenv("ADMIN_PASSWORD")
     name = os.getenv("ADMIN_NAME", "Admin (Store Owner)")
+
+    if not email or not password:
+        raise ValueError(
+            "Security Error: ADMIN_EMAIL aur ADMIN_PASSWORD .env file mein set hona zaroori hain!"
+        )
 
     db = SessionLocal()
     try:
@@ -44,4 +52,3 @@ def create_admin():
 
 if __name__ == "__main__":
     create_admin()
-
