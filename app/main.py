@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.routers.auth import router as auth_router
+from app.routers.categories import router as categories_router
 
 app = FastAPI(title="Single-Vendor E-Commerce API", version="1.0.0")
 
 app.include_router(auth_router)
+app.include_router(categories_router)
 
 
 @app.get("/health", tags=["Health"])
