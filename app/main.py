@@ -11,6 +11,7 @@ from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.cart import router as cart_router
 from app.routers.categories import router as categories_router
+from app.routers.orders import router as orders_router
 from app.routers.product_images import router as product_images_router
 from app.routers.products import router as products_router
 
@@ -27,6 +28,7 @@ app.include_router(product_images_router)
 app.include_router(admin_router)
 app.include_router(addresses_router)
 app.include_router(cart_router)
+app.include_router(orders_router)
 
 
 # Swagger UI mein file upload button show karne ke liye
