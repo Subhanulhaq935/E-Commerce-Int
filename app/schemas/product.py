@@ -58,6 +58,7 @@ class ProductResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     images: List[ProductImageResponse] = []
+    average_rating: Optional[float] = None
+    review_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
-

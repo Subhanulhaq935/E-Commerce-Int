@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.product import Product
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.review_repository import ReviewRepository
 from app.schemas.product import ProductCreate, ProductUpdate
 
 
@@ -28,6 +29,9 @@ class ProductService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found",
             )
+        avg_rating, count = ReviewRepository.get_stats(db, product_id=product.id)
+        setattr(product, "average_rating", avg_rating)
+        setattr(product, "review_count", count)
         return product
 
     @staticmethod
@@ -40,7 +44,7 @@ class ProductService:
         skip: int = 0,
         limit: int = 20,
     ) -> Sequence[Product]:
-        return ProductRepository.list_active(
+        products = ProductRepository.list_active(
             db,
             category_id=category_id,
             search=search,
@@ -49,6 +53,11 @@ class ProductService:
             skip=skip,
             limit=limit,
         )
+        for p in products:
+            avg_rating, count = ReviewRepository.get_stats(db, product_id=p.id)
+            setattr(p, "average_rating", avg_rating)
+            setattr(p, "review_count", count)
+        return products
 
     @staticmethod
     def list_admin(
@@ -61,7 +70,7 @@ class ProductService:
         skip: int = 0,
         limit: int = 20,
     ) -> Sequence[Product]:
-        return ProductRepository.list_all_admin(
+        products = ProductRepository.list_all_admin(
             db,
             category_id=category_id,
             search=search,
@@ -71,6 +80,11 @@ class ProductService:
             skip=skip,
             limit=limit,
         )
+        for p in products:
+            avg_rating, count = ReviewRepository.get_stats(db, product_id=p.id)
+            setattr(p, "average_rating", avg_rating)
+            setattr(p, "review_count", count)
+        return products
 
     @staticmethod
     def update(db: Session, product_id: int, data: ProductUpdate) -> Product:
@@ -102,4 +116,3 @@ class ProductService:
                 detail="Product not found",
             )
         return ProductRepository.soft_delete(db, product=product)
-

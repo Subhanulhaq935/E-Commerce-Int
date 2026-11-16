@@ -15,6 +15,7 @@ from app.routers.orders import router as orders_router
 from app.routers.payments import router as payments_router
 from app.routers.product_images import router as product_images_router
 from app.routers.products import router as products_router
+from app.routers.reviews import router as reviews_router
 
 app = FastAPI(title="Single-Vendor E-Commerce API", version="1.0.0")
 
@@ -31,6 +32,7 @@ app.include_router(addresses_router)
 app.include_router(cart_router)
 app.include_router(orders_router)
 app.include_router(payments_router)
+app.include_router(reviews_router)
 
 
 # Swagger UI mein file upload button show karne ke liye
