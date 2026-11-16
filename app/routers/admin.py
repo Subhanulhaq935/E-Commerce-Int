@@ -5,10 +5,12 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.dependencies.auth import require_admin
-from app.models.enums import OrderStatus
+from app.models.enums import OrderStatus, UserRole
 from app.models.user import User
 from app.schemas.order import OrderResponse, OrderStatusUpdate
 from app.schemas.product import ProductResponse
+from app.schemas.user import UserResponse, UserStatusUpdate
+from app.services.admin_service import AdminService
 from app.services.order_service import OrderService
 from app.services.product_service import ProductService
 
@@ -77,4 +79,57 @@ def admin_update_order_status(
 ):
     return OrderService.update_order_status(
         db, order_id=id, new_status=data.status
+    )
+
+
+@router.patch(
+    "/orders/{id}/cancel",
+    response_model=OrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel order and restore product stock (Admin only)",
+)
+def admin_cancel_order(
+    id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return AdminService.cancel_order(db, order_id=id)
+
+
+@router.get(
+    "/users",
+    response_model=List[UserResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List all users with filters (Admin only)",
+)
+def admin_list_users(
+    role: Optional[UserRole] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return AdminService.list_users(
+        db, role=role, is_active=is_active, skip=skip, limit=limit
+    )
+
+
+@router.patch(
+    "/users/{id}/status",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Activate or deactivate a user (Admin only)",
+)
+def admin_update_user_status(
+    id: int,
+    data: UserStatusUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return AdminService.update_user_status(
+        db,
+        current_admin=current_admin,
+        target_user_id=id,
+        is_active=data.is_active,
     )

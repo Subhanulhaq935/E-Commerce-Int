@@ -55,3 +55,6 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
