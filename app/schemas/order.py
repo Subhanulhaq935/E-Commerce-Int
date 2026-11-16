@@ -4,10 +4,15 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import OrderStatus, PaymentMethod, PaymentStatus
+from app.schemas.address import AddressResponse
 
 
 class CheckoutRequest(BaseModel):
     shipping_address_id: int
+
+
+class OrderStatusUpdate(BaseModel):
+    status: OrderStatus
 
 
 class OrderItemResponse(BaseModel):
@@ -42,5 +47,6 @@ class OrderResponse(BaseModel):
     created_at: datetime
     items: List[OrderItemResponse]
     payment: Optional[PaymentResponse] = None
+    shipping_address: Optional[AddressResponse] = None
 
     model_config = ConfigDict(from_attributes=True)

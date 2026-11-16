@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -76,3 +76,45 @@ class OrderRepository:
             )
             .where(Order.id == order_id)
         )
+
+    @staticmethod
+    def list_by_buyer(
+        db: Session, buyer_id: int, skip: int = 0, limit: int = 20
+    ) -> Sequence[Order]:
+        return db.scalars(
+            select(Order)
+            .options(
+                selectinload(Order.items),
+                selectinload(Order.payment),
+                selectinload(Order.shipping_address),
+            )
+            .where(Order.buyer_id == buyer_id)
+            .order_by(Order.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        ).all()
+
+    @staticmethod
+    def list_all(
+        db: Session,
+        status: Optional[OrderStatus] = None,
+        buyer_id: Optional[int] = None,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> Sequence[Order]:
+        stmt = (
+            select(Order)
+            .options(
+                selectinload(Order.items),
+                selectinload(Order.payment),
+                selectinload(Order.shipping_address),
+            )
+            .order_by(Order.created_at.desc())
+        )
+        if status is not None:
+            stmt = stmt.where(Order.status == status)
+        if buyer_id is not None:
+            stmt = stmt.where(Order.buyer_id == buyer_id)
+
+        stmt = stmt.offset(skip).limit(limit)
+        return db.scalars(stmt).all()

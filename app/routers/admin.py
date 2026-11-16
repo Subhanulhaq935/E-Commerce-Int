@@ -5,8 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.dependencies.auth import require_admin
+from app.models.enums import OrderStatus
 from app.models.user import User
+from app.schemas.order import OrderResponse, OrderStatusUpdate
 from app.schemas.product import ProductResponse
+from app.services.order_service import OrderService
 from app.services.product_service import ProductService
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -40,3 +43,38 @@ def admin_list_products(
         limit=limit,
     )
 
+
+@router.get(
+    "/orders",
+    response_model=List[OrderResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List all orders with filters (Admin only)",
+)
+def admin_list_orders(
+    status: Optional[OrderStatus] = Query(None),
+    buyer_id: Optional[int] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return OrderService.list_admin_orders(
+        db, status_filter=status, buyer_id=buyer_id, skip=skip, limit=limit
+    )
+
+
+@router.patch(
+    "/orders/{id}/status",
+    response_model=OrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update order status and auto-complete payment on delivery (Admin only)",
+)
+def admin_update_order_status(
+    id: int,
+    data: OrderStatusUpdate,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+):
+    return OrderService.update_order_status(
+        db, order_id=id, new_status=data.status
+    )
