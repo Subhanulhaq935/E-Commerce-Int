@@ -12,7 +12,7 @@
 [![Pytest](https://img.shields.io/badge/Pytest-23%20Passed-4682B4?style=for-the-badge&logo=pytest&logoColor=white)](https://pytest.org)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-[Live API Docs (Swagger UI)](https://e-commerce-int.onrender.com/docs) • [ReDoc](https://e-commerce-int.onrender.com/redoc) • [Report Bug](https://github.com/Subhanulhaq935/E-Commerce-Int/issues)
+[Live API Docs (Swagger UI)](https://e-commerce-int.onrender.com/docs) • [ReDoc](https://e-commerce-int.onrender.com/redoc)
 
 </div>
 
