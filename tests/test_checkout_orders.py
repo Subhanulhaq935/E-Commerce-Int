@@ -147,6 +147,7 @@ def test_cancel_order_restores_stock(
     )
     assert cancel_res.status_code == 200
     assert cancel_res.json()["status"] == "cancelled"
+    assert cancel_res.json()["payment"]["status"] == "cancelled"
 
     # Stock should be restored back to 10!
     assert client.get(f"/products/{sample_product.id}").json()["stock"] == 10

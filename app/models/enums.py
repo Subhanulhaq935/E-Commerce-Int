@@ -21,4 +21,4 @@ class PaymentMethod(str, enum.Enum):
 class PaymentStatus(str, enum.Enum):
     pending = "pending"
     completed = "completed"
-
+    cancelled = "cancelled"

@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.enums import OrderStatus, UserRole
+from app.models.enums import OrderStatus, PaymentStatus, UserRole
 from app.models.order import Order
 from app.models.product import Product
 from app.models.user import User
@@ -30,6 +30,11 @@ class AdminService:
 
         # Status update to cancelled
         order.status = OrderStatus.cancelled
+
+        # Payment status update to cancelled
+        if order.payment:
+            order.payment.status = PaymentStatus.cancelled
+            order.payment.paid_at = None
 
         # Stock restore karein (Har product ka stock wapas add karein)
         for item in order.items:
