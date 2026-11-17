@@ -62,7 +62,7 @@ class OrderService:
                 if item.quantity > product.stock:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Itni quantity available nahi hai",
+                        detail="Requested quantity is not available in stock",
                     )
 
             # 5. Total calculation (DB prices se, client se nahi)

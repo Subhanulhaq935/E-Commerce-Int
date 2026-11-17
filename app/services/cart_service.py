@@ -85,7 +85,7 @@ class CartService:
         if new_quantity > product.stock:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Itni quantity available nahi hai",
+                detail="Requested quantity is not available in stock",
             )
 
         if existing_item:
@@ -132,7 +132,7 @@ class CartService:
         if data.quantity > product.stock:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Itni quantity available nahi hai",
+                detail="Requested quantity is not available in stock",
             )
 
         CartRepository.update_item_quantity(

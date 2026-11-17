@@ -23,7 +23,7 @@
 Yeh backend ek **Single-Vendor E-Commerce Store** ke liye tayyar kiya gaya hai jahan:
 1. **Store Owner hi Admin hai** — Kisi alag third-party seller ka concept nahi hai.
 2. **Buyer Strict Isolation** — Har buyer sirf apna cart, addresses, orders aur payments dekh sakta hai.
-3. **Strict Stock Validation** — Agar buyer cart ya checkout ke waqt mojooda stock se zyada quantity select kare to foran `400 Bad Request` return hota hai: `{"detail": "Itni quantity available nahi hai"}`.
+3. **Strict Stock Validation** — Agar buyer cart ya checkout ke waqt mojooda stock se zyada quantity select kare to foran `400 Bad Request` return hota hai: `{"detail": "Requested quantity is not available in stock"}`.
 4. **Deadlock-Free Row-Level Locking** — Concurrency issues aur race conditions se bachne ke liye checkout ke waqt products `SELECT ... FOR UPDATE` se ascending order mein lock hotay hain.
 5. **Automatic COD Payment on Delivery** — Jab Admin order deliver mark karta hai, to Cash-On-Delivery payment automatically `completed` ho jati hai aur timestamp record ho jata hai.
 
