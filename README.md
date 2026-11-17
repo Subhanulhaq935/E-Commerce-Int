@@ -138,7 +138,7 @@ Interactive Documentation:
 
 ---
 
-## 📋 Master API Reference (Total 35 Endpoints)
+## 📋API Reference (Total 35 Endpoints)
 
 <details>
 <summary><b>Click to expand full 35 API Endpoints Table</b></summary>
