@@ -213,6 +213,5 @@ tests/test_reviews.py ............................... [100%]
 
 - 🛡️ **Zero Secret Leaks**: Secrets strictly read from `.env`, never hardcoded or tracked in Git.
 - 🔑 **Cryptographic Hashing**: Passwords hashed using industry-standard `bcrypt`.
-- 🗄️ **SQL Injection Safe**: 100% parameterized SQLAlchemy 2.0 ORM queries.
 - ⚡ **Magic Bytes File Sniffing**: Prevents malicious file uploads disguised as images.
 - 🚫 **Role Tampering Protection**: Public registration strictly restricted to buyer role.
