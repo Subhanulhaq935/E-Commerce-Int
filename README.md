@@ -115,8 +115,8 @@ UPLOAD_DIR=uploads
 MAX_IMAGE_SIZE_MB=5
 MAX_IMAGES_PER_PRODUCT=5
 DELIVERY_CHARGE=0
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=Admin@12345
+ADMIN_EMAIL=your-admin-email@example.com
+ADMIN_PASSWORD=your-secure-admin-password
 ```
 
 ### 4. Database Migrations & Admin Seed
