@@ -20,44 +20,13 @@ export default function Cart() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [errorMsg, setErrorMsg] = useState('')
-  const [busyItemIds, setBusyItemIds] = useState({})
 
-  const handleUpdateQty = async (itemId, newQty) => {
-    if (busyItemIds[itemId]) return
-    setBusyItemIds((prev) => ({ ...prev, [itemId]: true }))
-    try {
-      setErrorMsg('')
-      await updateQuantity(itemId, newQty)
-    } catch (err) {
-      const msg = err.response?.data?.detail || 'Requested quantity is not available'
-      setErrorMsg(msg)
-      setTimeout(() => setErrorMsg(''), 3500)
-    } finally {
-      setBusyItemIds((prev) => {
-        const copy = { ...prev }
-        delete copy[itemId]
-        return copy
-      })
-    }
+  const handleUpdateQty = (itemId, newQty) => {
+    updateQuantity(itemId, newQty)
   }
 
-  const handleRemove = async (itemId) => {
-    if (busyItemIds[itemId]) return
-    setBusyItemIds((prev) => ({ ...prev, [itemId]: true }))
-    try {
-      setErrorMsg('')
-      await removeFromCart(itemId)
-    } catch (err) {
-      const msg = err.response?.data?.detail || 'Could not remove item from cart'
-      setErrorMsg(msg)
-      setTimeout(() => setErrorMsg(''), 3500)
-    } finally {
-      setBusyItemIds((prev) => {
-        const copy = { ...prev }
-        delete copy[itemId]
-        return copy
-      })
-    }
+  const handleRemove = (itemId) => {
+    removeFromCart(itemId)
   }
 
   if (!user) {
