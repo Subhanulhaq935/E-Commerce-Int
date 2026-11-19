@@ -1,5 +1,6 @@
 import os
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
@@ -18,6 +19,15 @@ from app.routers.products import router as products_router
 from app.routers.reviews import router as reviews_router
 
 app = FastAPI(title="Single-Vendor E-Commerce API", version="1.0.0")
+
+# CORS middleware for Frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Static files mount for uploaded images
 os.makedirs("uploads", exist_ok=True)
