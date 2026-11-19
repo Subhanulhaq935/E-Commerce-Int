@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -11,12 +12,36 @@ import {
   ShieldCheck,
   Truck,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react'
 
 export default function Cart() {
   const { cart, loading, updateQuantity, removeFromCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [errorMsg, setErrorMsg] = useState('')
+
+  const handleUpdateQty = async (itemId, newQty) => {
+    try {
+      setErrorMsg('')
+      await updateQuantity(itemId, newQty)
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Requested quantity is not available'
+      setErrorMsg(msg)
+      setTimeout(() => setErrorMsg(''), 3500)
+    }
+  }
+
+  const handleRemove = async (itemId) => {
+    try {
+      setErrorMsg('')
+      await removeFromCart(itemId)
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Could not remove item from cart'
+      setErrorMsg(msg)
+      setTimeout(() => setErrorMsg(''), 3500)
+    }
+  }
 
   if (!user) {
     return (
@@ -113,6 +138,13 @@ export default function Cart() {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-2.5 text-red-600 text-xs sm:text-sm font-semibold shadow-2xs animate-shake">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Cart Items List */}
         <div className="lg:col-span-2 space-y-4">
@@ -161,20 +193,22 @@ export default function Cart() {
 
                 {/* Quantity & Delete Controls */}
                 <div className="flex items-center justify-between w-full sm:w-auto gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
-                  <div className="flex items-center border-2 border-gray-200 rounded-xl bg-gray-50/60 p-0.5">
+                  <div className="flex items-center border-2 border-gray-200 rounded-xl bg-gray-50/60 p-0.5 shadow-2xs">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-8 h-8 rounded-lg text-charcoal hover:bg-white hover:shadow-2xs transition font-extrabold cursor-pointer"
+                      onClick={() => handleUpdateQty(item.id, item.quantity - 1)}
+                      className="w-8 h-8 rounded-lg text-charcoal hover:bg-white hover:shadow-xs transition-all font-extrabold cursor-pointer active:scale-90 select-none flex items-center justify-center text-base"
+                      title="Decrease quantity"
                     >
                       −
                     </button>
-                    <span className="px-3.5 text-sm font-extrabold text-charcoal">
+                    <span className="px-3.5 text-sm font-black text-charcoal min-w-[28px] text-center select-none tabular-nums">
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => handleUpdateQty(item.id, item.quantity + 1)}
                       disabled={item.quantity >= item.product?.stock}
-                      className="w-8 h-8 rounded-lg text-charcoal hover:bg-white hover:shadow-2xs transition font-extrabold disabled:opacity-30 cursor-pointer"
+                      className="w-8 h-8 rounded-lg text-charcoal hover:bg-white hover:shadow-xs transition-all font-extrabold disabled:opacity-30 cursor-pointer active:scale-90 select-none flex items-center justify-center text-base"
+                      title="Increase quantity"
                     >
                       +
                     </button>
@@ -184,14 +218,14 @@ export default function Cart() {
                     <span className="text-[10px] font-bold uppercase text-gray-400 block">
                       Total
                     </span>
-                    <span className="font-extrabold text-charcoal text-base">
+                    <span className="font-extrabold text-charcoal text-base tabular-nums">
                       Rs. {(Number(item.unit_price) * item.quantity).toLocaleString()}
                     </span>
                   </div>
 
                   <button
-                    onClick={() => removeFromCart(item.id)}
-                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
+                    onClick={() => handleRemove(item.id)}
+                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer active:scale-90"
                     title="Remove item"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -223,7 +257,9 @@ export default function Cart() {
             <div className="space-y-3.5 text-sm text-gray-600 border-b border-gray-100 pb-5">
               <div className="flex justify-between items-center">
                 <span>Items Subtotal</span>
-                <span className="font-bold text-charcoal">Rs. {subtotal.toLocaleString()}</span>
+                <span className="font-bold text-charcoal tabular-nums">
+                  Rs. {subtotal.toLocaleString()}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Delivery Charges</span>
@@ -235,14 +271,14 @@ export default function Cart() {
 
             <div className="flex justify-between items-baseline py-5">
               <span className="text-base font-extrabold text-charcoal">Total Payable</span>
-              <span className="text-primary-orange text-2xl font-black">
+              <span className="text-primary-orange text-2xl font-black tabular-nums">
                 Rs. {subtotal.toLocaleString()}
               </span>
             </div>
 
             <button
               onClick={() => navigate('/checkout')}
-              className="w-full bg-primary-orange hover:bg-primary-orange-hover text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-base"
+              className="w-full bg-primary-orange hover:bg-primary-orange-hover text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-base active:scale-[0.98]"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4" />

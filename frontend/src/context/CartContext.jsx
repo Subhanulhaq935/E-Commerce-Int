@@ -41,21 +41,77 @@ export const CartProvider = ({ children }) => {
     return res.data
   }
 
+  // Optimistic Instant Quantity Update (0ms UI feedback + background sync)
   const updateQuantity = async (itemId, quantity) => {
     if (quantity <= 0) {
       return removeFromCart(itemId)
     }
-    const res = await api.patch(`/cart/items/${itemId}`, { quantity })
-    if (res.data) {
-      setCart(res.data)
+
+    const previousCart = cart
+
+    // 1. Instant local memory update (0ms UI feedback)
+    setCart((prevCart) => {
+      if (!prevCart || !prevCart.items) return prevCart
+      const updatedItems = prevCart.items.map((it) => {
+        if (it.id === itemId) {
+          const subtotal = Number(it.unit_price) * quantity
+          return { ...it, quantity, subtotal }
+        }
+        return it
+      })
+      const newTotal = updatedItems.reduce(
+        (sum, it) => sum + Number(it.unit_price) * it.quantity,
+        0
+      )
+      return {
+        ...prevCart,
+        items: updatedItems,
+        total: newTotal,
+      }
+    })
+
+    // 2. Background sync with backend
+    try {
+      const res = await api.patch(`/cart/items/${itemId}`, { quantity })
+      if (res.data) {
+        setCart(res.data)
+      }
+      return res.data
+    } catch (err) {
+      // Revert if rejected by backend (e.g. stock exceeded)
+      setCart(previousCart)
+      throw err
     }
-    return res.data
   }
 
+  // Optimistic Instant Remove (0ms UI removal + background sync)
   const removeFromCart = async (itemId) => {
-    const res = await api.delete(`/cart/items/${itemId}`)
-    if (res.data) {
-      setCart(res.data)
+    const previousCart = cart
+
+    // 1. Instant local removal (0ms UI feedback)
+    setCart((prevCart) => {
+      if (!prevCart || !prevCart.items) return prevCart
+      const updatedItems = prevCart.items.filter((it) => it.id !== itemId)
+      const newTotal = updatedItems.reduce(
+        (sum, it) => sum + Number(it.unit_price) * it.quantity,
+        0
+      )
+      return {
+        ...prevCart,
+        items: updatedItems,
+        total: newTotal,
+      }
+    })
+
+    // 2. Background sync with backend
+    try {
+      const res = await api.delete(`/cart/items/${itemId}`)
+      if (res.data) {
+        setCart(res.data)
+      }
+    } catch (err) {
+      setCart(previousCart)
+      throw err
     }
   }
 
