@@ -14,7 +14,32 @@ import {
   ArrowLeft,
   ShoppingBag,
   X,
+  Phone,
+  User,
 } from 'lucide-react'
+
+// Backend errors ko safe readable string mein convert karne ke liye taake React crash na ho
+const extractErrorMessage = (err, fallback = 'An error occurred. Please try again.') => {
+  const detail = err?.response?.data?.detail
+  if (!detail) return fallback
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail
+      .map((d) => {
+        if (typeof d === 'string') return d
+        if (d.msg) {
+          const field = d.loc && d.loc.length > 1 ? `${d.loc[d.loc.length - 1]}: ` : ''
+          return `${field}${d.msg}`
+        }
+        return JSON.stringify(d)
+      })
+      .join(', ')
+  }
+  if (typeof detail === 'object') {
+    return JSON.stringify(detail)
+  }
+  return fallback
+}
 
 export default function Checkout() {
   const { cart, clearCartState } = useCart()
@@ -28,11 +53,12 @@ export default function Checkout() {
   const [error, setError] = useState('')
   const [orderSuccess, setOrderSuccess] = useState(null)
 
-  // New Address form modal state
+  // New Address form modal state matching backend AddressCreate schema
   const [showAddAddress, setShowAddAddress] = useState(false)
   const [newAddress, setNewAddress] = useState({
-    title: 'Home',
-    street_address: '',
+    full_name: '',
+    phone: '',
+    address_line: '',
     city: '',
     postal_code: '',
     country: 'Pakistan',
@@ -43,11 +69,15 @@ export default function Checkout() {
   const fetchAddresses = async () => {
     try {
       const res = await api.get('/addresses/')
-      setAddresses(res.data)
-      const defaultAddr = res.data.find((a) => a.is_default) || res.data[0]
-      if (defaultAddr) setSelectedAddressId(defaultAddr.id)
+      const list = Array.isArray(res.data) ? res.data : []
+      setAddresses(list)
+      const defaultAddr = list.find((a) => a.is_default) || list[0]
+      if (defaultAddr && !selectedAddressId) {
+        setSelectedAddressId(defaultAddr.id)
+      }
     } catch (err) {
       console.error('Error fetching addresses:', err)
+      setAddresses([])
     } finally {
       setLoading(false)
     }
@@ -61,6 +91,20 @@ export default function Checkout() {
     fetchAddresses()
   }, [user])
 
+  const openAddModal = () => {
+    setNewAddress({
+      full_name: user?.name || '',
+      phone: '',
+      address_line: '',
+      city: '',
+      postal_code: '',
+      country: 'Pakistan',
+      is_default: addresses.length === 0,
+    })
+    setError('')
+    setShowAddAddress(true)
+  }
+
   const handleSaveAddress = async (e) => {
     e.preventDefault()
     setSavingAddress(true)
@@ -68,18 +112,15 @@ export default function Checkout() {
     try {
       const res = await api.post('/addresses/', newAddress)
       await fetchAddresses()
-      setSelectedAddressId(res.data.id)
+      if (res.data?.id) {
+        setSelectedAddressId(res.data.id)
+      }
       setShowAddAddress(false)
-      setNewAddress({
-        title: 'Home',
-        street_address: '',
-        city: '',
-        postal_code: '',
-        country: 'Pakistan',
-        is_default: true,
-      })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to save address')
+      console.error('Save address error:', err)
+      const msg = extractErrorMessage(err, 'Failed to save address. Please verify all fields.')
+      setError(msg)
+      setTimeout(() => setError(''), 5000)
     } finally {
       setSavingAddress(false)
     }
@@ -88,6 +129,7 @@ export default function Checkout() {
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
       setError('Please select or add a delivery address.')
+      setTimeout(() => setError(''), 4000)
       return
     }
 
@@ -104,8 +146,9 @@ export default function Checkout() {
         navigate('/my-orders')
       }, 3000)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to place order. Please try again.')
-      setTimeout(() => setError(''), 4000)
+      const msg = extractErrorMessage(err, 'Failed to place order. Please try again.')
+      setError(msg)
+      setTimeout(() => setError(''), 5000)
     } finally {
       setPlacingOrder(false)
     }
@@ -264,7 +307,8 @@ export default function Checkout() {
                 </div>
               </div>
               <button
-                onClick={() => setShowAddAddress(true)}
+                type="button"
+                onClick={openAddModal}
                 className="bg-orange-50 hover:bg-orange-100 text-primary-orange text-xs font-extrabold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Address
@@ -279,7 +323,8 @@ export default function Checkout() {
                   Please add your shipping address to place your order.
                 </p>
                 <button
-                  onClick={() => setShowAddAddress(true)}
+                  type="button"
+                  onClick={openAddModal}
                   className="bg-primary-orange hover:bg-primary-orange-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
                 >
                   + Add Shipping Address
@@ -299,30 +344,34 @@ export default function Checkout() {
                       }`}
                     >
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
                           <span className="font-extrabold text-charcoal text-sm flex items-center gap-1.5">
-                            {addr.title}
+                            {addr.full_name}
                           </span>
                           <input
                             type="radio"
                             name="selected_address"
                             checked={isSelected}
                             onChange={() => setSelectedAddressId(addr.id)}
-                            className="accent-primary-orange w-4 h-4"
+                            className="accent-primary-orange w-4 h-4 cursor-pointer"
                           />
                         </div>
-                        <p className="text-gray-600 text-xs leading-relaxed">
-                          {addr.street_address}
+                        <p className="text-gray-500 text-xs font-medium mb-1.5 flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-gray-400" />
+                          <span>{addr.phone}</span>
+                        </p>
+                        <p className="text-gray-700 text-xs leading-relaxed font-normal">
+                          {addr.address_line}
                         </p>
                         <p className="text-gray-500 text-xs font-semibold mt-1.5">
-                          {addr.city} {addr.postal_code ? `• ${addr.postal_code}` : ''}
+                          {addr.city}, {addr.postal_code} • {addr.country || 'Pakistan'}
                         </p>
                       </div>
 
                       {addr.is_default && (
                         <div className="mt-3 pt-2 border-t border-gray-200/60">
                           <span className="text-[10px] font-extrabold text-primary-orange uppercase tracking-wider">
-                            ★ Default Shipping Address
+                            ★ Default Address
                           </span>
                         </div>
                       )}
@@ -438,13 +487,14 @@ export default function Checkout() {
       {/* Add Address Modal */}
       {showAddAddress && (
         <div className="fixed inset-0 bg-charcoal/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-gray-100">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h3 className="text-lg font-extrabold text-charcoal">Add Delivery Address</h3>
-                <p className="text-xs text-gray-400">Enter your accurate doorstep details</p>
+                <p className="text-xs text-gray-400">Enter accurate doorstep details</p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowAddAddress(false)}
                 className="text-gray-400 hover:text-charcoal p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer"
               >
@@ -455,59 +505,93 @@ export default function Checkout() {
             <form onSubmit={handleSaveAddress} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Address Label
+                  Receiver's Full Name *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={newAddress.title}
-                  onChange={(e) => setNewAddress({ ...newAddress, title: e.target.value })}
-                  placeholder="e.g. Home, Office"
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
-                />
+                <div className="relative">
+                  <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={newAddress.full_name}
+                    onChange={(e) => setNewAddress({ ...newAddress, full_name: e.target.value })}
+                    placeholder="e.g. Muhammad Ali"
+                    className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Complete Street Address
+                  Phone Number *
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    required
+                    value={newAddress.phone}
+                    onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })}
+                    placeholder="e.g. 03001234567"
+                    className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  Complete Street Address *
                 </label>
                 <textarea
                   required
                   rows={2}
-                  value={newAddress.street_address}
-                  onChange={(e) => setNewAddress({ ...newAddress, street_address: e.target.value })}
-                  placeholder="House #, Street #, Block / Sector / Area"
+                  value={newAddress.address_line}
+                  onChange={(e) => setNewAddress({ ...newAddress, address_line: e.target.value })}
+                  placeholder="House #, Street #, Sector / Area / Colony"
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">City</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">City *</label>
                   <input
                     type="text"
                     required
                     value={newAddress.city}
                     onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                    placeholder="Lahore / Karachi"
+                    placeholder="e.g. Lahore / Karachi"
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                    Postal Code
+                    Postal Code *
                   </label>
                   <input
                     type="text"
+                    required
                     value={newAddress.postal_code}
                     onChange={(e) => setNewAddress({ ...newAddress, postal_code: e.target.value })}
-                    placeholder="54000"
+                    placeholder="e.g. 54000"
                     className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3">
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="is_default"
+                  checked={newAddress.is_default}
+                  onChange={(e) => setNewAddress({ ...newAddress, is_default: e.target.checked })}
+                  className="accent-primary-orange w-4 h-4 rounded cursor-pointer"
+                />
+                <label htmlFor="is_default" className="text-xs text-gray-700 font-medium cursor-pointer">
+                  Set as default delivery address
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setShowAddAddress(false)}
@@ -518,7 +602,7 @@ export default function Checkout() {
                 <button
                   type="submit"
                   disabled={savingAddress}
-                  className="px-6 py-2.5 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold rounded-xl shadow-md shadow-orange-500/20 cursor-pointer"
+                  className="px-6 py-2.5 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold rounded-xl shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50"
                 >
                   {savingAddress ? 'Saving...' : 'Save Address'}
                 </button>
