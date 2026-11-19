@@ -33,6 +33,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [addingToCart, setAddingToCart] = useState(false)
+  const [addedSuccess, setAddedSuccess] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
@@ -74,7 +75,9 @@ export default function ProductDetail() {
       setAddingToCart(true)
       setMessage({ type: '', text: '' })
       await addToCart(product.id, quantity)
+      setAddedSuccess(true)
       setMessage({ type: 'success', text: 'Item added to your cart successfully!' })
+      setTimeout(() => setAddedSuccess(false), 1800)
       setTimeout(() => setMessage({ type: '', text: '' }), 2500)
     } catch (err) {
       const msg = err.response?.data?.detail || 'Failed to add item to cart'
@@ -320,10 +323,28 @@ export default function ProductDetail() {
                 <button
                   onClick={handleAddToCart}
                   disabled={addingToCart}
-                  className="flex-1 bg-primary-orange hover:bg-primary-orange-hover text-white font-bold py-3.5 px-8 rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 transition-all duration-200 flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer text-base"
+                  className={`flex-1 font-bold py-3.5 px-8 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer text-base shadow-lg ${
+                    addedSuccess
+                      ? 'bg-emerald-600 text-white shadow-emerald-500/25 scale-[1.02]'
+                      : 'bg-primary-orange hover:bg-primary-orange-hover text-white shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 disabled:opacity-60'
+                  }`}
                 >
-                  <ShoppingCart className="w-5 h-5" />
-                  <span>{addingToCart ? 'Adding to Cart...' : 'Add to Shopping Cart'}</span>
+                  {addedSuccess ? (
+                    <>
+                      <CheckCircle className="w-5 h-5 text-white animate-bounce" />
+                      <span>Added to Cart!</span>
+                    </>
+                  ) : addingToCart ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-5 h-5" />
+                      <span>Add to Shopping Cart</span>
+                    </>
+                  )}
                 </button>
               </div>
             ) : (

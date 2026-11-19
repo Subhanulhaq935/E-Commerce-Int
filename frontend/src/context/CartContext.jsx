@@ -29,12 +29,15 @@ export const CartProvider = ({ children }) => {
     fetchCart()
   }, [user])
 
+  // Direct fast state updates from backend response (no redundant second GET roundtrip)
   const addToCart = async (productId, quantity = 1) => {
     const res = await api.post('/cart/items', {
       product_id: productId,
       quantity,
     })
-    await fetchCart()
+    if (res.data) {
+      setCart(res.data)
+    }
     return res.data
   }
 
@@ -43,13 +46,17 @@ export const CartProvider = ({ children }) => {
       return removeFromCart(itemId)
     }
     const res = await api.patch(`/cart/items/${itemId}`, { quantity })
-    await fetchCart()
+    if (res.data) {
+      setCart(res.data)
+    }
     return res.data
   }
 
   const removeFromCart = async (itemId) => {
-    await api.delete(`/cart/items/${itemId}`)
-    await fetchCart()
+    const res = await api.delete(`/cart/items/${itemId}`)
+    if (res.data) {
+      setCart(res.data)
+    }
   }
 
   const clearCartState = () => {
