@@ -41,7 +41,7 @@ export const CartProvider = ({ children }) => {
     return res.data
   }
 
-  // Optimistic Instant Quantity Update (0ms UI feedback + background sync)
+  // Optimistic Instant Quantity Update
   const updateQuantity = async (itemId, quantity) => {
     if (quantity <= 0) {
       return removeFromCart(itemId)
@@ -78,16 +78,27 @@ export const CartProvider = ({ children }) => {
       }
       return res.data
     } catch (err) {
-      // Revert if rejected by backend (e.g. stock exceeded)
+      // If item was already deleted on server, ensure it stays removed (never resurrect!)
+      if (err.response?.status === 404) {
+        setCart((prevCart) => {
+          if (!prevCart || !prevCart.items) return prevCart
+          const updatedItems = prevCart.items.filter((it) => it.id !== itemId)
+          return {
+            ...prevCart,
+            items: updatedItems,
+            total: updatedItems.reduce((sum, it) => sum + Number(it.unit_price) * it.quantity, 0),
+          }
+        })
+        return
+      }
+      // Revert only if real validation error (e.g. stock exceeded)
       setCart(previousCart)
       throw err
     }
   }
 
-  // Optimistic Instant Remove (0ms UI removal + background sync)
+  // Optimistic Instant Remove (Never resurrects deleted items)
   const removeFromCart = async (itemId) => {
-    const previousCart = cart
-
     // 1. Instant local removal (0ms UI feedback)
     setCart((prevCart) => {
       if (!prevCart || !prevCart.items) return prevCart
@@ -110,8 +121,14 @@ export const CartProvider = ({ children }) => {
         setCart(res.data)
       }
     } catch (err) {
-      setCart(previousCart)
-      throw err
+      // If 404, item is already removed on server — keep it removed!
+      if (err.response?.status === 404) {
+        return
+      }
+      // If other network error, silently re-fetch to ensure sync
+      console.error('Error removing item from server:', err)
+      const fresh = await api.get('/cart/').catch(() => null)
+      if (fresh?.data) setCart(fresh.data)
     }
   }
 

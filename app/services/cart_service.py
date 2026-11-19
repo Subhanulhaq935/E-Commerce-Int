@@ -148,10 +148,9 @@ class CartService:
     ) -> CartResponse:
         item = CartRepository.get_item_by_id(db, item_id=item_id)
         if not item:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Cart item not found",
-            )
+            # Idempotent delete: if item is already removed or not found, return fresh cart smoothly
+            fresh_cart = CartRepository.get_or_create_cart(db, user_id=user_id)
+            return cls._format_cart_response(fresh_cart)
 
         # Buyer Isolation Check
         if item.cart.user_id != user_id:
