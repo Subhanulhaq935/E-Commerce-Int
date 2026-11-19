@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-charcoal: #1F2937;
+  --color-primary-orange: #F97316;
+  --color-primary-orange-hover: #EA580C;
+  --color-offwhite: #F9FAFB;
+}
+
+body {
+  background-color: var(--color-offwhite);
+  color: #1F2937;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
