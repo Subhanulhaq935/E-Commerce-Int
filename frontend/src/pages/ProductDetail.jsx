@@ -66,10 +66,11 @@ export default function ProductDetail() {
       setMessage({ type: '', text: '' })
       await addToCart(product.id, quantity)
       setMessage({ type: 'success', text: 'Item added to your cart successfully!' })
-      setTimeout(() => setMessage({ type: '', text: '' }), 4000)
+      setTimeout(() => setMessage({ type: '', text: '' }), 2500)
     } catch (err) {
       const msg = err.response?.data?.detail || 'Failed to add item to cart'
       setMessage({ type: 'error', text: msg })
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     } finally {
       setAddingToCart(false)
     }

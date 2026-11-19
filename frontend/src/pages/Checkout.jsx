@@ -99,8 +99,12 @@ export default function Checkout() {
       })
       clearCartState()
       setOrderSuccess(res.data)
+      setTimeout(() => {
+        navigate('/my-orders')
+      }, 3000)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to place order. Please try again.')
+      setTimeout(() => setError(''), 4000)
     } finally {
       setPlacingOrder(false)
     }

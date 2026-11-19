@@ -88,16 +88,25 @@ export default function AdminDashboard() {
     }
   }
 
+  const notifySuccess = (msg) => {
+    setSuccessMsg(msg)
+    setTimeout(() => setSuccessMsg(''), 2500)
+  }
+
+  const notifyError = (msg) => {
+    setError(msg)
+    setTimeout(() => setError(''), 3000)
+  }
+
   // --- Order Status Transitions ---
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
-      setSuccessMsg(`Order #${orderId} moved to ${newStatus}`)
-      setTimeout(() => setSuccessMsg(''), 3000)
+      notifySuccess(`Order #${orderId} moved to ${newStatus}`)
       const res = await api.get('/admin/orders')
       setOrders(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to update order status')
+      notifyError(err.response?.data?.detail || 'Failed to update order status')
     }
   }
 
@@ -105,12 +114,11 @@ export default function AdminDashboard() {
     if (!window.confirm(`Are you sure you want to cancel order #${orderId}? Stock will be restored to inventory.`)) return
     try {
       await api.patch(`/admin/orders/${orderId}/cancel`)
-      setSuccessMsg(`Order #${orderId} cancelled and stock restored!`)
-      setTimeout(() => setSuccessMsg(''), 3000)
+      notifySuccess(`Order #${orderId} cancelled and stock restored!`)
       const res = await api.get('/admin/orders')
       setOrders(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to cancel order')
+      notifyError(err.response?.data?.detail || 'Failed to cancel order')
     }
   }
 
@@ -124,13 +132,13 @@ export default function AdminDashboard() {
         stock: parseInt(newProduct.stock),
         category_id: parseInt(newProduct.category_id),
       })
-      setSuccessMsg('Product added successfully!')
+      notifySuccess('Product added successfully!')
       setShowAddProduct(false)
       setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' })
       const res = await api.get('/products/?limit=100')
       setProducts(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create product')
+      notifyError(err.response?.data?.detail || 'Failed to create product')
     }
   }
 
@@ -138,12 +146,11 @@ export default function AdminDashboard() {
     if (!window.confirm('Are you sure you want to delete this product?')) return
     try {
       await api.delete(`/products/${productId}`)
-      setSuccessMsg('Product deleted successfully')
-      setTimeout(() => setSuccessMsg(''), 3000)
+      notifySuccess('Product deleted successfully')
       const res = await api.get('/products/?limit=100')
       setProducts(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to delete product')
+      notifyError(err.response?.data?.detail || 'Failed to delete product')
     }
   }
 
@@ -152,13 +159,13 @@ export default function AdminDashboard() {
     e.preventDefault()
     try {
       await api.post('/categories/', { name: newCategoryName, description: 'Store Category' })
-      setSuccessMsg('Category created successfully!')
+      notifySuccess('Category created successfully!')
       setShowAddCategory(false)
       setNewCategoryName('')
       const res = await api.get('/categories/')
       setCategories(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create category')
+      notifyError(err.response?.data?.detail || 'Failed to create category')
     }
   }
 
@@ -175,13 +182,13 @@ export default function AdminDashboard() {
       await api.post(`/products/${uploadModal.productId}/images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      setSuccessMsg('Images uploaded successfully to Cloudinary!')
+      notifySuccess('Images uploaded successfully to Cloudinary!')
       setUploadModal({ open: false, productId: null, productName: '' })
       setSelectedFiles([])
       const res = await api.get('/products/?limit=100')
       setProducts(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to upload images')
+      notifyError(err.response?.data?.detail || 'Failed to upload images')
     } finally {
       setUploadingImage(false)
     }
@@ -193,12 +200,11 @@ export default function AdminDashboard() {
       await api.patch(`/admin/users/${targetUser.id}/status`, {
         is_active: !targetUser.is_active,
       })
-      setSuccessMsg(`User status updated!`)
-      setTimeout(() => setSuccessMsg(''), 3000)
+      notifySuccess(`User status updated!`)
       const res = await api.get('/admin/users')
       setUsersList(res.data)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to update user status')
+      notifyError(err.response?.data?.detail || 'Failed to update user status')
     }
   }
 
