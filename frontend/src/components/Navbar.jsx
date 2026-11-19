@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
 import { ShoppingBag, ShoppingCart, LogOut, LayoutDashboard, Package } from 'lucide-react'
 
-export default function Navbar({ cartCount = 0 }) {
+export default function Navbar() {
   const { user, logout, isAdmin } = useAuth()
+  const { cartCount } = useCart()
   const navigate = useNavigate()
 
   const handleLogout = () => {

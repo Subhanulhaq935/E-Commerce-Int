@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { ShoppingBag, Star, Package, Loader2, Search } from 'lucide-react'
 
@@ -112,7 +113,10 @@ export default function Home() {
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col group"
               >
                 {/* Product Image */}
-                <div className="h-48 bg-gray-100 relative overflow-hidden flex items-center justify-center">
+                <Link
+                  to={`/products/${p.id}`}
+                  className="h-48 bg-gray-100 relative overflow-hidden flex items-center justify-center block"
+                >
                   {imgUrl ? (
                     <img
                       src={imgUrl}
@@ -129,14 +133,17 @@ export default function Home() {
                       </span>
                     </div>
                   )}
-                </div>
+                </Link>
 
                 {/* Details */}
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-semibold text-charcoal text-base line-clamp-1 group-hover:text-primary-orange transition-colors">
+                    <Link
+                      to={`/products/${p.id}`}
+                      className="font-semibold text-charcoal text-base line-clamp-1 group-hover:text-primary-orange transition-colors"
+                    >
                       {p.name}
-                    </h3>
+                    </Link>
                     <p className="text-gray-500 text-xs line-clamp-2 mt-1">
                       {p.description || 'No description provided.'}
                     </p>
@@ -163,12 +170,12 @@ export default function Home() {
                         Rs. {Number(p.price).toLocaleString()}
                       </span>
                     </div>
-                    <button
-                      disabled={p.stock <= 0}
+                    <Link
+                      to={`/products/${p.id}`}
                       className="bg-primary-orange hover:bg-primary-orange-hover text-white text-xs font-semibold px-3 py-2 rounded-lg transition disabled:opacity-50 cursor-pointer shadow-sm"
                     >
-                      {p.stock > 0 ? 'Buy Now' : 'Sold Out'}
-                    </button>
+                      {p.stock > 0 ? 'View Details' : 'Sold Out'}
+                    </Link>
                   </div>
                 </div>
               </div>
