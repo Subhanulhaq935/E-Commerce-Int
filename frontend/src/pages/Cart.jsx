@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+import { resolveImageUrl } from '../utils/imageUrl'
 import { Trash2, ShoppingBag, ArrowRight, ArrowLeft, Loader2, ShieldCheck } from 'lucide-react'
 
 export default function Cart() {
@@ -61,7 +62,7 @@ export default function Cart() {
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => {
             const primaryImg = item.product?.images?.find((img) => img.is_primary) || item.product?.images?.[0]
-            const imgUrl = primaryImg ? `https://e-commerce-int.onrender.com${primaryImg.image_url}` : null
+            const imgUrl = primaryImg ? resolveImageUrl(primaryImg.image_url) : null
 
             return (
               <div

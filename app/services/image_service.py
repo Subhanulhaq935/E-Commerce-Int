@@ -67,29 +67,54 @@ class ImageService:
                 detail=f"Cannot upload more than {settings.MAX_IMAGES_PER_PRODUCT} images for a product. Currently has {current_images_count}.",
             )
 
-        target_dir = os.path.join(settings.UPLOAD_DIR, "products", str(product_id))
-        os.makedirs(target_dir, exist_ok=True)
-
         has_primary = any(img.is_primary for img in product.images)
         saved_images: List[ProductImage] = []
+
+        # Check if Cloudinary is configured
+        use_cloudinary = bool(
+            settings.CLOUDINARY_CLOUD_NAME
+            and settings.CLOUDINARY_API_KEY
+            and settings.CLOUDINARY_API_SECRET
+        )
+        if use_cloudinary:
+            import cloudinary
+            import cloudinary.uploader
+
+            cloudinary.config(
+                cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+                api_key=settings.CLOUDINARY_API_KEY,
+                api_secret=settings.CLOUDINARY_API_SECRET,
+                secure=True,
+            )
+        else:
+            target_dir = os.path.join(settings.UPLOAD_DIR, "products", str(product_id))
+            os.makedirs(target_dir, exist_ok=True)
 
         for file in files:
             content = await file.read()
             ext = validate_image_bytes(file.filename or "", content)
 
-            unique_filename = f"{uuid.uuid4().hex}.{ext}"
-            file_disk_path = os.path.join(target_dir, unique_filename)
+            if use_cloudinary:
+                upload_res = cloudinary.uploader.upload(
+                    content,
+                    folder=f"ecommerce/products/{product_id}",
+                    resource_type="image",
+                )
+                image_url = upload_res.get("secure_url")
+            else:
+                unique_filename = f"{uuid.uuid4().hex}.{ext}"
+                file_disk_path = os.path.join(target_dir, unique_filename)
 
-            with open(file_disk_path, "wb") as f:
-                f.write(content)
+                with open(file_disk_path, "wb") as f:
+                    f.write(content)
+
+                image_url = f"/uploads/products/{product_id}/{unique_filename}"
 
             is_primary = False
             if not has_primary:
                 is_primary = True
                 has_primary = True
 
-            # Relative URL for static serving
-            image_url = f"/uploads/products/{product_id}/{unique_filename}"
             product_image = ProductImage(
                 product_id=product_id,
                 image_url=image_url,
@@ -118,13 +143,14 @@ class ImageService:
         product_id = image.product_id
         was_primary = image.is_primary
 
-        # Disk se file delete karein
-        relative_path = image.image_url.lstrip("/")
-        if os.path.exists(relative_path):
-            try:
-                os.remove(relative_path)
-            except OSError:
-                pass
+        # Disk se file delete karein (agar local relative path ho)
+        if not image.image_url.startswith("http"):
+            relative_path = image.image_url.lstrip("/")
+            if os.path.exists(relative_path):
+                try:
+                    os.remove(relative_path)
+                except OSError:
+                    pass
 
         db.delete(image)
         db.flush()

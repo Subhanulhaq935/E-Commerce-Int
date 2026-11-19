@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import api from '../api/client'
+import { resolveImageUrl } from '../utils/imageUrl'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -112,7 +113,7 @@ export default function ProductDetail() {
           <div className="w-full h-80 md:h-96 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100 mb-4">
             {selectedImage && !imageError ? (
               <img
-                src={`https://e-commerce-int.onrender.com${selectedImage}`}
+                src={resolveImageUrl(selectedImage)}
                 alt={product.name}
                 onError={() => setImageError(true)}
                 className="w-full h-full object-contain"
@@ -139,7 +140,7 @@ export default function ProductDetail() {
                   }`}
                 >
                   <img
-                    src={`https://e-commerce-int.onrender.com${img.image_url}`}
+                    src={resolveImageUrl(img.image_url)}
                     alt="Thumbnail"
                     className="w-full h-full object-cover"
                     onError={(e) => {

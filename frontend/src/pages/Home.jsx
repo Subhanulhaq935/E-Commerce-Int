@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
+import { resolveImageUrl } from '../utils/imageUrl'
 import { ShoppingBag, Star, Package, Loader2, Search } from 'lucide-react'
 
 export default function Home() {
@@ -105,7 +106,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredProducts.map((p) => {
             const primaryImg = p.images?.find((img) => img.is_primary) || p.images?.[0]
-            const imgUrl = primaryImg ? `https://e-commerce-int.onrender.com${primaryImg.image_url}` : null
+            const imgUrl = primaryImg ? resolveImageUrl(primaryImg.image_url) : null
 
             return (
               <div
