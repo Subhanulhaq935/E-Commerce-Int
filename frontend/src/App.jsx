@@ -10,6 +10,7 @@ import Checkout from './pages/Checkout'
 import MyOrders from './pages/MyOrders'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import AdminDashboard from './pages/AdminDashboard'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/my-orders" element={<MyOrders />} />
+                <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
               </Routes>
