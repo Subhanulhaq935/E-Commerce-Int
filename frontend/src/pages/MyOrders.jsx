@@ -28,10 +28,16 @@ export default function MyOrders() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [orders, setOrders] = useState([])
+  const [productsMap, setProductsMap] = useState({})
   const [loading, setLoading] = useState(true)
 
   // Review Modal state
-  const [reviewModal, setReviewModal] = useState({ open: false, productId: null, productName: '' })
+  const [reviewModal, setReviewModal] = useState({
+    open: false,
+    productId: null,
+    productName: '',
+    productImage: null,
+  })
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
@@ -40,8 +46,16 @@ export default function MyOrders() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const res = await api.get('/orders/my-orders')
-      setOrders(res.data)
+      const [ordersRes, productsRes] = await Promise.all([
+        api.get('/orders/my-orders'),
+        api.get('/products/?limit=100').catch(() => ({ data: [] })),
+      ])
+      setOrders(ordersRes.data)
+      const pMap = {}
+      productsRes.data?.forEach((p) => {
+        pMap[p.id] = p
+      })
+      setProductsMap(pMap)
     } catch (err) {
       console.error('Failed to fetch orders:', err)
     } finally {
@@ -68,7 +82,7 @@ export default function MyOrders() {
       })
       setReviewMessage({ type: 'success', text: 'Thank you! Your verified review has been posted.' })
       setTimeout(() => {
-        setReviewModal({ open: false, productId: null, productName: '' })
+        setReviewModal({ open: false, productId: null, productName: '', productImage: null })
         setComment('')
         setRating(5)
         setReviewMessage({ type: '', text: '' })
@@ -247,10 +261,13 @@ export default function MyOrders() {
                 {/* Order Items */}
                 <div className="p-6 divide-y divide-gray-100">
                   {ord.items?.map((item) => {
+                    const pInfo = productsMap[item.product_id] || item.product
                     const primaryImg =
-                      item.product?.images?.find((img) => img.is_primary) ||
-                      item.product?.images?.[0]
-                    const imgUrl = primaryImg ? resolveImageUrl(primaryImg.image_url) : null
+                      item.image_url ||
+                      pInfo?.images?.find((img) => img.is_primary)?.image_url ||
+                      pInfo?.images?.[0]?.image_url
+                    const imgUrl = primaryImg ? resolveImageUrl(primaryImg) : null
+                    const productName = item.product_name || pInfo?.name || `Product #${item.product_id}`
 
                     return (
                       <div
@@ -260,29 +277,35 @@ export default function MyOrders() {
                         <div className="flex items-center gap-4 w-full sm:w-auto">
                           <Link
                             to={`/products/${item.product_id}`}
-                            className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-200/60 flex-shrink-0 group"
+                            className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-200/60 flex-shrink-0 group hover:border-primary-orange/50 transition"
                           >
                             {imgUrl ? (
                               <img
                                 src={imgUrl}
-                                alt={item.product?.name}
+                                alt={productName}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                               />
                             ) : (
-                              <ShoppingBag className="w-6 h-6 text-gray-300" />
+                              <ShoppingBag className="w-7 h-7 text-gray-300" />
                             )}
                           </Link>
                           <div>
                             <Link
                               to={`/products/${item.product_id}`}
-                              className="font-bold text-charcoal hover:text-primary-orange transition text-sm sm:text-base line-clamp-1"
+                              className="font-extrabold text-charcoal hover:text-primary-orange transition text-sm sm:text-base line-clamp-1"
                             >
-                              {item.product?.name}
+                              {productName}
                             </Link>
                             <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 font-medium">
-                              <span>Qty: {item.quantity}</span>
+                              <span className="font-bold text-charcoal">Qty: {item.quantity}</span>
                               <span>•</span>
                               <span>Rs. {Number(item.unit_price).toLocaleString()} each</span>
+                              {pInfo?.category_id && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-gray-400">ID #{item.product_id}</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -294,10 +317,11 @@ export default function MyOrders() {
                               setReviewModal({
                                 open: true,
                                 productId: item.product_id,
-                                productName: item.product?.name,
+                                productName: productName,
+                                productImage: imgUrl,
                               })
                             }
-                            className="text-xs font-extrabold px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                            className="text-xs font-extrabold px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100 rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-2xs self-end sm:self-auto"
                           >
                             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                             <span>Write Verified Review</span>
@@ -320,16 +344,39 @@ export default function MyOrders() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-extrabold text-charcoal">Rate & Review Product</h3>
-                <p className="text-xs text-gray-500 font-medium mt-0.5">
-                  {reviewModal.productName}
-                </p>
+                <p className="text-xs text-gray-400">Share your verified purchase experience</p>
               </div>
               <button
-                onClick={() => setReviewModal({ open: false, productId: null, productName: '' })}
+                onClick={() =>
+                  setReviewModal({ open: false, productId: null, productName: '', productImage: null })
+                }
                 className="text-gray-400 hover:text-charcoal p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Product Highlight Card inside Modal */}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl border border-gray-100 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
+                {reviewModal.productImage ? (
+                  <img
+                    src={reviewModal.productImage}
+                    alt={reviewModal.productName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ShoppingBag className="w-5 h-5 text-gray-300" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary-orange block">
+                  Reviewing Item
+                </span>
+                <span className="text-sm font-extrabold text-charcoal block truncate">
+                  {reviewModal.productName}
+                </span>
+              </div>
             </div>
 
             {reviewMessage.text && (
@@ -388,7 +435,9 @@ export default function MyOrders() {
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setReviewModal({ open: false, productId: null, productName: '' })}
+                  onClick={() =>
+                    setReviewModal({ open: false, productId: null, productName: '', productImage: null })
+                  }
                   className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
@@ -396,7 +445,7 @@ export default function MyOrders() {
                 <button
                   type="submit"
                   disabled={submittingReview}
-                  className="px-6 py-2.5 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold rounded-xl shadow-md shadow-orange-500/20 cursor-pointer"
+                  className="px-6 py-2.5 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold rounded-xl shadow-md shadow-orange-500/20 cursor-pointer disabled:opacity-50"
                 >
                   {submittingReview ? 'Submitting...' : 'Post Review'}
                 </button>
