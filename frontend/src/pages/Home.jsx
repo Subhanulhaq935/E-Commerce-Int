@@ -115,17 +115,28 @@ export default function Home() {
                 {/* Product Image */}
                 <Link
                   to={`/products/${p.id}`}
-                  className="h-48 bg-gray-100 relative overflow-hidden flex items-center justify-center block"
+                  className="h-48 bg-gray-50 relative overflow-hidden flex items-center justify-center block"
                 >
-                  {imgUrl ? (
+                  {imgUrl && (
                     <img
                       src={imgUrl}
                       alt={p.name}
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                        if (e.target.nextSibling) {
+                          e.target.nextSibling.style.display = 'flex'
+                        }
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                  ) : (
-                    <ShoppingBag className="w-12 h-12 text-gray-300" />
                   )}
+                  <div
+                    style={{ display: imgUrl ? 'none' : 'flex' }}
+                    className="w-full h-full items-center justify-center bg-gray-50"
+                  >
+                    <ShoppingBag className="w-12 h-12 text-gray-300" />
+                  </div>
+
                   {p.stock <= 0 && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                       <span className="text-white text-xs font-bold uppercase tracking-wider bg-red-600 px-3 py-1 rounded-full">

@@ -25,6 +25,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState(null)
   const [reviews, setReviews] = useState([])
   const [selectedImage, setSelectedImage] = useState(null)
+  const [imageError, setImageError] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
   const [addingToCart, setAddingToCart] = useState(false)
@@ -34,14 +35,17 @@ export default function ProductDetail() {
     const fetchProductAndReviews = async () => {
       try {
         setLoading(true)
-        const [prodRes, revRes] = await Promise.all([
-          api.get(`/products/${id}`),
-          api.get(`/reviews/product/${id}`),
-        ])
+        const prodRes = await api.get(`/products/${id}`)
         setProduct(prodRes.data)
-        setReviews(revRes.data)
         const primary = prodRes.data.images?.find((img) => img.is_primary) || prodRes.data.images?.[0]
         if (primary) setSelectedImage(primary.image_url)
+
+        try {
+          const revRes = await api.get(`/products/${id}/reviews`)
+          setReviews(revRes.data)
+        } catch {
+          setReviews([])
+        }
       } catch (err) {
         console.error('Error fetching product:', err)
       } finally {
@@ -106,10 +110,11 @@ export default function ProductDetail() {
         {/* Images Column */}
         <div>
           <div className="w-full h-80 md:h-96 bg-gray-50 rounded-xl overflow-hidden flex items-center justify-center border border-gray-100 mb-4">
-            {selectedImage ? (
+            {selectedImage && !imageError ? (
               <img
                 src={`https://e-commerce-int.onrender.com${selectedImage}`}
                 alt={product.name}
+                onError={() => setImageError(true)}
                 className="w-full h-full object-contain"
               />
             ) : (
@@ -123,7 +128,10 @@ export default function ProductDetail() {
               {product.images.map((img) => (
                 <button
                   key={img.id}
-                  onClick={() => setSelectedImage(img.image_url)}
+                  onClick={() => {
+                    setSelectedImage(img.image_url)
+                    setImageError(false)
+                  }}
                   className={`w-16 h-16 rounded-lg border-2 overflow-hidden flex-shrink-0 cursor-pointer ${
                     selectedImage === img.image_url
                       ? 'border-primary-orange ring-2 ring-orange-200'
@@ -134,6 +142,9 @@ export default function ProductDetail() {
                     src={`https://e-commerce-int.onrender.com${img.image_url}`}
                     alt="Thumbnail"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none'
+                    }}
                   />
                 </button>
               ))}
@@ -237,14 +248,14 @@ export default function ProductDetail() {
                 <div className="flex items-center border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="px-3 py-2.5 text-gray-600 hover:bg-gray-100 transition font-bold"
+                    className="px-3 py-2.5 text-gray-600 hover:bg-gray-100 transition font-bold cursor-pointer"
                   >
                     -
                   </button>
                   <span className="px-4 py-2 text-sm font-semibold text-charcoal">{quantity}</span>
                   <button
                     onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
-                    className="px-3 py-2.5 text-gray-600 hover:bg-gray-100 transition font-bold"
+                    className="px-3 py-2.5 text-gray-600 hover:bg-gray-100 transition font-bold cursor-pointer"
                   >
                     +
                   </button>
