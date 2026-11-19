@@ -19,6 +19,7 @@ import {
   DollarSign,
   Layers,
   ArrowRight,
+  Edit3,
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -48,6 +49,15 @@ export default function AdminDashboard() {
   })
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
+
+  // Edit Product / Stock Modal
+  const [editProduct, setEditProduct] = useState({
+    open: false,
+    id: null,
+    name: '',
+    price: '',
+    stock: '',
+  })
 
   // Upload Image Modal
   const [uploadModal, setUploadModal] = useState({ open: false, productId: null, productName: '' })
@@ -151,6 +161,22 @@ export default function AdminDashboard() {
       setProducts(res.data)
     } catch (err) {
       notifyError(err.response?.data?.detail || 'Failed to delete product')
+    }
+  }
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault()
+    try {
+      await api.put(`/products/${editProduct.id}`, {
+        stock: parseInt(editProduct.stock),
+        price: parseFloat(editProduct.price),
+      })
+      notifySuccess('Product stock & price updated successfully!')
+      setEditProduct({ open: false, id: null, name: '', price: '', stock: '' })
+      const res = await api.get('/products/?limit=100')
+      setProducts(res.data)
+    } catch (err) {
+      notifyError(err.response?.data?.detail || 'Failed to update product stock')
     }
   }
 
@@ -479,7 +505,11 @@ export default function AdminDashboard() {
                         <span className="font-bold text-charcoal block">{p.name}</span>
                         <span className="text-gray-400 text-[11px]">{p.images?.length || 0} images</span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{p.category?.name || 'N/A'}</td>
+                      <td className="py-3 px-4">
+                        <span className="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md text-[11px] font-medium">
+                          {categories.find((c) => c.id === p.category_id)?.name || 'General'}
+                        </span>
+                      </td>
                       <td className="py-3 px-4 font-bold text-charcoal">
                         Rs. {Number(p.price).toLocaleString()}
                       </td>
@@ -489,6 +519,22 @@ export default function AdminDashboard() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right space-x-2">
+                        <button
+                          onClick={() =>
+                            setEditProduct({
+                              open: true,
+                              id: p.id,
+                              name: p.name,
+                              price: p.price,
+                              stock: p.stock,
+                            })
+                          }
+                          className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 cursor-pointer"
+                          title="Update stock & price"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Edit Stock
+                        </button>
                         <button
                           onClick={() => setUploadModal({ open: true, productId: p.id, productName: p.name })}
                           className="bg-orange-50 hover:bg-orange-100 text-primary-orange px-2.5 py-1 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 cursor-pointer"
@@ -739,6 +785,59 @@ export default function AdminDashboard() {
                   className="px-5 py-2 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-semibold rounded-xl disabled:opacity-50"
                 >
                   {uploadingImage ? 'Uploading to Cloudinary...' : 'Upload Now'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: EDIT STOCK & PRICE */}
+      {editProduct.open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-charcoal mb-1">Update Stock & Price</h3>
+            <p className="text-xs text-gray-500 mb-4">{editProduct.name}</p>
+
+            <form onSubmit={handleUpdateProduct} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Stock Units Available</label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={editProduct.stock}
+                  onChange={(e) => setEditProduct({ ...editProduct, stock: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">Unit Price (PKR)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  required
+                  value={editProduct.price}
+                  onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-xl text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditProduct({ open: false, id: null, name: '', price: '', stock: '' })}
+                  className="px-4 py-2 border rounded-xl text-sm text-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-semibold rounded-xl"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

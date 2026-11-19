@@ -24,6 +24,7 @@ export default function ProductDetail() {
   const { addToCart } = useCart()
 
   const [product, setProduct] = useState(null)
+  const [categoryName, setCategoryName] = useState('')
   const [reviews, setReviews] = useState([])
   const [selectedImage, setSelectedImage] = useState(null)
   const [imageError, setImageError] = useState(false)
@@ -36,8 +37,14 @@ export default function ProductDetail() {
     const fetchProductAndReviews = async () => {
       try {
         setLoading(true)
-        const prodRes = await api.get(`/products/${id}`)
+        const [prodRes, catRes] = await Promise.all([
+          api.get(`/products/${id}`),
+          api.get('/categories/').catch(() => ({ data: [] })),
+        ])
         setProduct(prodRes.data)
+        const foundCat = catRes.data?.find((c) => c.id === prodRes.data.category_id)
+        if (foundCat) setCategoryName(foundCat.name)
+
         const primary = prodRes.data.images?.find((img) => img.is_primary) || prodRes.data.images?.[0]
         if (primary) setSelectedImage(primary.image_url)
 
@@ -159,7 +166,7 @@ export default function ProductDetail() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-semibold px-2.5 py-1 bg-orange-50 text-primary-orange rounded-full">
-                {product.category?.name || 'Store Item'}
+                {categoryName || 'Store Item'}
               </span>
               {product.stock > 0 ? (
                 <span className="text-xs font-semibold px-2.5 py-1 bg-green-50 text-green-700 rounded-full flex items-center gap-1">
