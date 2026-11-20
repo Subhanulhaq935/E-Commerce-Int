@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { formatApiError } from '../utils/formatError'
 import { LogIn, Mail, Lock, AlertCircle, ShoppingBag, ShieldCheck } from 'lucide-react'
 
 export default function Login() {
@@ -23,7 +24,7 @@ export default function Login() {
         navigate('/')
       }
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Invalid email or password'
+      const msg = formatApiError(err, 'Invalid email or password')
       setError(msg)
     } finally {
       setLoading(false)

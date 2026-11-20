@@ -1,12 +1,25 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { UserPlus, User, Mail, Lock, Phone, AlertCircle, ShoppingBag, ShieldCheck } from 'lucide-react'
+import { formatApiError } from '../utils/formatError'
+import {
+  UserPlus,
+  User,
+  Mail,
+  Lock,
+  Phone,
+  AlertCircle,
+  ShoppingBag,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+} from 'lucide-react'
 
 export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [phoneNumber, setPhoneNumber] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -23,7 +36,7 @@ export default function Register() {
       await login(email, password)
       navigate('/')
     } catch (err) {
-      const msg = err.response?.data?.detail || 'Registration failed. Please check inputs.'
+      const msg = formatApiError(err, 'Registration failed. Please check your inputs.')
       setError(msg)
     } finally {
       setLoading(false)
@@ -61,7 +74,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Full Name
+              Full Name *
             </label>
             <div className="relative">
               <User className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -78,7 +91,7 @@ export default function Register() {
 
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Email Address
+              Email Address *
             </label>
             <div className="relative">
               <Mail className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -111,19 +124,29 @@ export default function Register() {
 
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Password
+              Password *
             </label>
             <div className="relative">
               <Lock className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 text-sm transition-all"
+                placeholder="e.g. Secret@123"
+                className="w-full pl-11 pr-11 py-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 text-sm transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
+            <p className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+              Must be at least 8 characters with 1 uppercase (A-Z), 1 lowercase (a-z), 1 number (0-9) & 1 special symbol (@$!%*?&#).
+            </p>
           </div>
 
           <button
