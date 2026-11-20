@@ -30,16 +30,65 @@ export const CartProvider = ({ children }) => {
     fetchCart()
   }, [user])
 
-  // Direct fast state updates from backend response (no redundant second GET roundtrip)
-  const addToCart = async (productId, quantity = 1) => {
-    const res = await api.post('/cart/items', {
-      product_id: productId,
-      quantity,
+  // 100% Optimistic Instant Add to Cart (0ms - No Loading, Immediate Badge & State Update)
+  const addToCart = (productOrId, quantity = 1) => {
+    const productId = typeof productOrId === 'object' ? productOrId.id : productOrId
+    const productObj = typeof productOrId === 'object' ? productOrId : null
+
+    // 1. INSTANT (0ms) memory update: updates cart count & items immediately!
+    setCart((prevCart) => {
+      const existingItems = prevCart?.items ? [...prevCart.items] : []
+      const existingIndex = existingItems.findIndex((it) => it.product_id === productId)
+
+      if (existingIndex > -1) {
+        const existing = existingItems[existingIndex]
+        const newQty = existing.quantity + quantity
+        const subtotal = Number(existing.unit_price) * newQty
+        existingItems[existingIndex] = { ...existing, quantity: newQty, subtotal }
+      } else if (productObj) {
+        const unitPrice = Number(productObj.price)
+        const primaryImg =
+          productObj.images?.find((i) => i.is_primary)?.image_url ||
+          productObj.images?.[0]?.image_url
+        existingItems.push({
+          id: Date.now(),
+          product_id: productObj.id,
+          product_name: productObj.name,
+          unit_price: unitPrice,
+          quantity: quantity,
+          subtotal: unitPrice * quantity,
+          image_url: primaryImg,
+        })
+      }
+
+      const newTotal = existingItems.reduce(
+        (sum, it) => sum + Number(it.unit_price) * it.quantity,
+        0
+      )
+
+      return {
+        ...prevCart,
+        items: existingItems,
+        total: newTotal,
+      }
     })
-    if (res.data) {
-      setCart(res.data)
-    }
-    return res.data
+
+    // 2. Background sync silently with backend
+    return api
+      .post('/cart/items', {
+        product_id: productId,
+        quantity,
+      })
+      .then((res) => {
+        if (res.data) {
+          setCart(res.data)
+        }
+        return res.data
+      })
+      .catch((err) => {
+        fetchCart()
+        throw err
+      })
   }
 
   // Lightning-fast debounced quantity update (0ms UI reaction on every click + single debounced network call)

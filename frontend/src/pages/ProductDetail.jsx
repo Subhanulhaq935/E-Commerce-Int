@@ -32,7 +32,6 @@ export default function ProductDetail() {
   const [imageError, setImageError] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [addingToCart, setAddingToCart] = useState(false)
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
@@ -66,26 +65,25 @@ export default function ProductDetail() {
     fetchProductAndReviews()
   }, [id])
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = () => {
     if (!user) {
       navigate('/login')
       return
     }
-    try {
-      setAddingToCart(true)
-      setMessage({ type: '', text: '' })
-      await addToCart(product.id, quantity)
-      setAddedSuccess(true)
-      setMessage({ type: 'success', text: 'Item added to your cart successfully!' })
-      setTimeout(() => setAddedSuccess(false), 1800)
-      setTimeout(() => setMessage({ type: '', text: '' }), 2500)
-    } catch (err) {
+
+    // 0ms INSTANT REACTION! NO LOADING SPINNER!
+    setAddedSuccess(true)
+    setMessage({ type: 'success', text: 'Item added to your cart successfully!' })
+    setTimeout(() => setAddedSuccess(false), 2000)
+    setTimeout(() => setMessage({ type: '', text: '' }), 2500)
+
+    // Silently sync with backend in background
+    addToCart(product, quantity).catch((err) => {
+      setAddedSuccess(false)
       const msg = err.response?.data?.detail || 'Failed to add item to cart'
       setMessage({ type: 'error', text: msg })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
-    } finally {
-      setAddingToCart(false)
-    }
+    })
   }
 
   if (loading) {
@@ -322,22 +320,16 @@ export default function ProductDetail() {
                 {/* Add to Cart button */}
                 <button
                   onClick={handleAddToCart}
-                  disabled={addingToCart}
-                  className={`flex-1 font-bold py-3.5 px-8 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer text-base shadow-lg ${
+                  className={`flex-1 font-bold py-3.5 px-8 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer text-base shadow-lg active:scale-95 ${
                     addedSuccess
                       ? 'bg-emerald-600 text-white shadow-emerald-500/25 scale-[1.02]'
-                      : 'bg-primary-orange hover:bg-primary-orange-hover text-white shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 disabled:opacity-60'
+                      : 'bg-primary-orange hover:bg-primary-orange-hover text-white shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35'
                   }`}
                 >
                   {addedSuccess ? (
                     <>
                       <CheckCircle className="w-5 h-5 text-white animate-bounce" />
                       <span>Added to Cart!</span>
-                    </>
-                  ) : addingToCart ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Adding...</span>
                     </>
                   ) : (
                     <>
