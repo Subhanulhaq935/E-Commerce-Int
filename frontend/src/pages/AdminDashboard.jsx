@@ -68,10 +68,11 @@ export default function AdminDashboard() {
     stock: '',
   })
 
-  // Upload Image Modal
+  // Upload & Manage Images Modal
   const [uploadModal, setUploadModal] = useState({ open: false, productId: null, productName: '' })
   const [selectedFiles, setSelectedFiles] = useState([])
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [deletingImageId, setDeletingImageId] = useState(null)
 
   // Auth Guard
   useEffect(() => {
@@ -220,6 +221,23 @@ export default function AdminDashboard() {
     }
   }
 
+  // --- Delete Product Picture ---
+  const handleDeleteProductImage = async (imageId) => {
+    if (!window.confirm('Are you sure you want to delete this picture?')) return
+    setDeletingImageId(imageId)
+    try {
+      await api.delete(`/product-images/${imageId}`)
+      setCachedProducts(null)
+      notifySuccess('Picture deleted successfully!')
+      const res = await api.get('/admin/products?limit=100')
+      setProducts(res.data)
+    } catch (err) {
+      notifyError(err.response?.data?.detail || 'Failed to delete picture')
+    } finally {
+      setDeletingImageId(null)
+    }
+  }
+
   // --- Cloudinary Image Upload ---
   const handleImageUpload = async (e) => {
     e.preventDefault()
@@ -234,8 +252,7 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setCachedProducts(null)
-      notifySuccess('Images uploaded successfully to Cloudinary!')
-      setUploadModal({ open: false, productId: null, productName: '' })
+      notifySuccess('Images uploaded successfully!')
       setSelectedFiles([])
       const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
@@ -848,12 +865,18 @@ export default function AdminDashboard() {
                             <span>Edit Stock</span>
                           </button>
                           <button
-                            onClick={() => setUploadModal({ open: true, productId: p.id, productName: p.name })}
+                            onClick={() =>
+                              setUploadModal({
+                                open: true,
+                                productId: p.id,
+                                productName: p.name,
+                              })
+                            }
                             className="bg-orange-50 hover:bg-orange-100 text-primary-orange border border-orange-200/60 px-3 py-1.5 rounded-xl text-[11px] font-bold transition inline-flex items-center gap-1.5 cursor-pointer"
-                            title="Upload image to Cloudinary"
+                            title="Manage product photos (View, Delete & Upload)"
                           >
                             <Upload className="w-3.5 h-3.5" />
-                            <span>Upload Pic</span>
+                            <span>Photos ({p.images?.length || 0})</span>
                           </button>
                           <button
                             onClick={() => handleDeleteProduct(p.id)}
@@ -1221,64 +1244,152 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* MODAL 3: CLOUDINARY IMAGE UPLOAD */}
-      {uploadModal.open && (
-        <div className="fixed inset-0 bg-charcoal/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-extrabold text-charcoal">Upload Product Images</h3>
-                <p className="text-xs text-gray-500 font-medium">{uploadModal.productName}</p>
-              </div>
-              <button
-                onClick={() => {
-                  setUploadModal({ open: false, productId: null, productName: '' })
-                  setSelectedFiles([])
-                }}
-                className="text-gray-400 hover:text-charcoal p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* MODAL 3: MANAGE & UPLOAD PRODUCT IMAGES */}
+      {uploadModal.open && (() => {
+        const activeProduct = products.find((p) => p.id === uploadModal.productId)
+        const currentImages = activeProduct?.images || []
 
-            <form onSubmit={handleImageUpload} className="space-y-4">
-              <div className="border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-2xl p-6 text-center">
-                <Upload className="w-9 h-9 text-primary-orange mx-auto mb-2.5" />
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png, image/jpeg, image/webp"
-                  onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
-                  className="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-primary-orange hover:file:bg-orange-100 cursor-pointer"
-                />
-                <p className="text-[11px] text-gray-400 mt-2.5 font-medium">
-                  JPG, PNG, or WEBP (Hosted permanently on Cloudinary CDN)
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-1">
+        return (
+          <div className="fixed inset-0 bg-charcoal/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4 flex-shrink-0">
+                <div>
+                  <h3 className="text-lg font-extrabold text-charcoal">Manage Product Photos</h3>
+                  <p className="text-xs text-gray-500 font-medium">{uploadModal.productName}</p>
+                </div>
                 <button
-                  type="button"
                   onClick={() => {
                     setUploadModal({ open: false, productId: null, productName: '' })
                     setSelectedFiles([])
                   }}
-                  className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                  className="text-gray-400 hover:text-charcoal p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploadingImage || !selectedFiles.length}
-                  className="px-6 py-2.5 bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold rounded-xl shadow-md shadow-orange-500/20 disabled:opacity-50 cursor-pointer"
-                >
-                  {uploadingImage ? 'Uploading to Cloudinary...' : 'Upload Now'}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto pr-1 flex-1 space-y-4">
+                {/* Section 1: Current Images */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-700">
+                      Existing Photos ({currentImages.length})
+                    </span>
+                    <span className="text-[11px] text-gray-400">Click trash icon to delete</span>
+                  </div>
+
+                  {currentImages.length === 0 ? (
+                    <div className="p-4 bg-gray-50 border border-dashed border-gray-200 rounded-2xl text-center text-xs text-gray-400">
+                      No photos uploaded for this product yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {currentImages.map((img) => {
+                        const imgUrl = resolveImageUrl(img.image_url)
+                        const isDeleting = deletingImageId === img.id
+
+                        return (
+                          <div
+                            key={img.id}
+                            className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 aspect-square flex items-center justify-center shadow-2xs group"
+                          >
+                            <img
+                              src={imgUrl}
+                              alt="Product"
+                              className="w-full h-full object-cover"
+                            />
+
+                            {/* Primary Badge */}
+                            {img.is_primary && (
+                              <span className="absolute top-2 left-2 bg-emerald-600/90 backdrop-blur-xs text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
+                                Primary
+                              </span>
+                            )}
+
+                            {/* Delete Button */}
+                            <button
+                              type="button"
+                              disabled={isDeleting}
+                              onClick={() => handleDeleteProductImage(img.id)}
+                              className="absolute top-2 right-2 p-1.5 rounded-xl bg-red-600/95 hover:bg-red-700 text-white shadow-md transition transform hover:scale-105 cursor-pointer disabled:opacity-50"
+                              title="Delete this photo"
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 2: Upload New Photos */}
+                <div>
+                  <span className="text-xs font-bold text-gray-700 block mb-2">
+                    Upload New Photos
+                  </span>
+                  <form onSubmit={handleImageUpload} className="space-y-3">
+                    <div className="border-2 border-dashed border-gray-200 bg-gray-50/50 rounded-2xl p-5 text-center">
+                      <Upload className="w-8 h-8 text-primary-orange mx-auto mb-2" />
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
+                        className="text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-orange-50 file:text-primary-orange hover:file:bg-orange-100 cursor-pointer"
+                      />
+                      <p className="text-[11px] text-gray-400 mt-2 font-medium">
+                        JPG, PNG, or WEBP (Direct Cloudinary CDN upload)
+                      </p>
+                      {selectedFiles.length > 0 && (
+                        <p className="text-xs text-emerald-600 font-bold mt-2">
+                          ✓ {selectedFiles.length} new {selectedFiles.length === 1 ? 'file' : 'files'} selected
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex justify-end gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUploadModal({ open: false, productId: null, productName: '' })
+                          setSelectedFiles([])
+                        }}
+                        className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                      >
+                        Done / Close
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={uploadingImage || !selectedFiles.length}
+                        className="px-5 py-2 bg-primary-orange hover:bg-primary-orange-hover text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                      >
+                        {uploadingImage ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Upload Selected</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* MODAL 4: EDIT STOCK & PRICE */}
       {editProduct.open && (

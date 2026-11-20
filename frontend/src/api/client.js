@@ -18,14 +18,18 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Response interceptor: handle 401
+// Response interceptor: handle 401 (clear stale session without hijacking public browsing)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      if (window.location.pathname !== '/login') {
+
+      // Sirf protected pages par login par bhejein, public pages (Home, Products, Register) par browsing block na karein
+      const protectedPaths = ['/admin', '/checkout', '/my-orders']
+      const currentPath = window.location.pathname
+      if (protectedPaths.some((p) => currentPath.startsWith(p))) {
         window.location.href = '/login'
       }
     }

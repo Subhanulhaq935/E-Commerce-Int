@@ -151,6 +151,29 @@ class ImageService:
                     os.remove(relative_path)
                 except OSError:
                     pass
+        elif (
+            settings.CLOUDINARY_CLOUD_NAME
+            and settings.CLOUDINARY_API_KEY
+            and settings.CLOUDINARY_API_SECRET
+            and "cloudinary.com" in image.image_url
+        ):
+            try:
+                import re
+                import cloudinary
+                import cloudinary.uploader
+
+                cloudinary.config(
+                    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+                    api_key=settings.CLOUDINARY_API_KEY,
+                    api_secret=settings.CLOUDINARY_API_SECRET,
+                    secure=True,
+                )
+                match = re.search(r"/upload/(?:v\d+/)?([^\.]+)", image.image_url)
+                if match:
+                    public_id = match.group(1)
+                    cloudinary.uploader.destroy(public_id)
+            except Exception:
+                pass
 
         db.delete(image)
         db.flush()

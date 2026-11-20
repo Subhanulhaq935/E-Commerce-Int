@@ -37,7 +37,7 @@ export default function Home() {
       try {
         const [prodRes, catRes] = await Promise.all([
           api.get('/products/?limit=100'),
-          api.get('/categories/'),
+          api.get('/categories/').catch(() => ({ data: [] })),
         ])
         setProducts(prodRes.data)
         setCategories(catRes.data)
