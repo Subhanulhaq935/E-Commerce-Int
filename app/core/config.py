@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     SMTP_EMAIL: str | None = None
     SMTP_PASSWORD: str | None = None
     FRONTEND_URL: str = "https://e-commerce-int.vercel.app"
+    BREVO_API_KEY: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

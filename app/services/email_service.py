@@ -23,9 +23,12 @@ class EmailService:
             logger.warning(f"Order #{order.id} has no guest email. Skipping email dispatch.")
             return False
 
-        if not settings.SMTP_EMAIL or not settings.SMTP_PASSWORD:
+        brevo_key = (getattr(settings, "BREVO_API_KEY", None) or "").strip()
+        has_smtp = bool(settings.SMTP_EMAIL and settings.SMTP_PASSWORD)
+
+        if not brevo_key and not has_smtp:
             logger.warning(
-                "SMTP credentials not fully configured (SMTP_EMAIL or SMTP_PASSWORD missing). Skipping email dispatch."
+                "No email credentials configured (Neither BREVO_API_KEY nor SMTP credentials found). Skipping email dispatch."
             )
             return False
 
@@ -229,8 +232,43 @@ Best regards,
 E-Shop.pk Team
 """
 
-        clean_email = (settings.SMTP_EMAIL or "").strip()
+        clean_email = (settings.SMTP_EMAIL or "subhanulhaq935@gmail.com").strip()
         clean_password = (settings.SMTP_PASSWORD or "").replace(" ", "").strip()
+
+        # 1. Try Brevo HTTPS REST API first (Bypasses Render Free Tier SMTP port blocks)
+        if brevo_key:
+            try:
+                import httpx
+                payload = {
+                    "sender": {"name": "EShop Store", "email": clean_email},
+                    "to": [{"email": recipient_email, "name": customer_name}],
+                    "replyTo": {"email": clean_email, "name": "EShop Store"},
+                    "subject": f"Order #{order.id} Confirmed - EShop Store",
+                    "htmlContent": html_content,
+                    "textContent": plain_text,
+                }
+                headers = {
+                    "accept": "application/json",
+                    "api-key": brevo_key,
+                    "content-type": "application/json",
+                }
+                with httpx.Client(timeout=15.0) as client:
+                    resp = client.post("https://api.brevo.com/v3/smtp/email", json=payload, headers=headers)
+                if resp.status_code in (200, 201, 202):
+                    logger.info(f"Order #{order.id} confirmation sent via Brevo HTTPS API to {recipient_email}")
+                    print(f"[EMAIL SERVICE] Order #{order.id} confirmation sent via Brevo HTTPS API to {recipient_email}")
+                    return True
+                else:
+                    logger.warning(f"Brevo API error ({resp.status_code}): {resp.text}. Trying SMTP...")
+                    print(f"[EMAIL SERVICE] Brevo API error ({resp.status_code}): {resp.text}. Trying SMTP...")
+            except Exception as e_brevo:
+                logger.warning(f"Brevo API error: {e_brevo}. Trying SMTP...")
+                print(f"[EMAIL SERVICE] Brevo API request failed: {e_brevo}. Trying SMTP...")
+
+        # 2. Fallback to direct SMTP (for local dev or hosts allowing port 587/465)
+        if not has_smtp:
+            logger.warning("No SMTP credentials configured to fallback to. Skipping.")
+            return False
 
         try:
             msg = MIMEMultipart("alternative")
