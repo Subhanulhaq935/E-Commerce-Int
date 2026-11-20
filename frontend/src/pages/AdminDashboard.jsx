@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { resolveImageUrl } from '../utils/imageUrl'
+import { setCachedProducts } from '../utils/catalogCache'
 import {
   Package,
   ShoppingBag,
@@ -22,6 +23,8 @@ import {
   Search,
   AlertTriangle,
   RotateCcw,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -88,7 +91,7 @@ export default function AdminDashboard() {
       setLoading(true)
       const [ordRes, prodRes, catRes, usrRes] = await Promise.all([
         api.get('/admin/orders'),
-        api.get('/products/?limit=100'),
+        api.get('/admin/products?limit=100'),
         api.get('/categories/'),
         api.get('/admin/users'),
       ])
@@ -139,6 +142,19 @@ export default function AdminDashboard() {
   }
 
   // --- Product Management ---
+  const handleToggleProductActive = async (targetProduct) => {
+    try {
+      const newStatus = !targetProduct.is_active
+      await api.put(`/products/${targetProduct.id}`, { is_active: newStatus })
+      setCachedProducts(null)
+      notifySuccess(`Product "${targetProduct.name}" is now ${newStatus ? 'Active (Visible in store)' : 'Inactive (Hidden from buyers)'}!`)
+      const res = await api.get('/admin/products?limit=100')
+      setProducts(res.data)
+    } catch (err) {
+      notifyError(err.response?.data?.detail || 'Failed to update product status')
+    }
+  }
+
   const handleCreateProduct = async (e) => {
     e.preventDefault()
     try {
@@ -148,10 +164,11 @@ export default function AdminDashboard() {
         stock: parseInt(newProduct.stock),
         category_id: parseInt(newProduct.category_id),
       })
+      setCachedProducts(null)
       notifySuccess('Product added successfully!')
       setShowAddProduct(false)
       setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' })
-      const res = await api.get('/products/?limit=100')
+      const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
       notifyError(err.response?.data?.detail || 'Failed to create product')
@@ -162,8 +179,9 @@ export default function AdminDashboard() {
     if (!window.confirm('Are you sure you want to delete this product?')) return
     try {
       await api.delete(`/products/${productId}`)
+      setCachedProducts(null)
       notifySuccess('Product deleted successfully')
-      const res = await api.get('/products/?limit=100')
+      const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
       notifyError(err.response?.data?.detail || 'Failed to delete product')
@@ -177,9 +195,10 @@ export default function AdminDashboard() {
         stock: parseInt(editProduct.stock),
         price: parseFloat(editProduct.price),
       })
+      setCachedProducts(null)
       notifySuccess('Product stock & price updated successfully!')
       setEditProduct({ open: false, id: null, name: '', price: '', stock: '' })
-      const res = await api.get('/products/?limit=100')
+      const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
       notifyError(err.response?.data?.detail || 'Failed to update product stock')
@@ -214,10 +233,11 @@ export default function AdminDashboard() {
       await api.post(`/products/${uploadModal.productId}/images`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
+      setCachedProducts(null)
       notifySuccess('Images uploaded successfully to Cloudinary!')
       setUploadModal({ open: false, productId: null, productName: '' })
       setSelectedFiles([])
-      const res = await api.get('/products/?limit=100')
+      const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
       notifyError(err.response?.data?.detail || 'Failed to upload images')
@@ -716,6 +736,7 @@ export default function AdminDashboard() {
                     <th className="py-3.5 px-5">Category</th>
                     <th className="py-3.5 px-5">Price</th>
                     <th className="py-3.5 px-5">Stock</th>
+                    <th className="py-3.5 px-5">Status</th>
                     <th className="py-3.5 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -725,7 +746,12 @@ export default function AdminDashboard() {
                     const imgUrl = primaryImg ? resolveImageUrl(primaryImg.image_url) : null
 
                     return (
-                      <tr key={p.id} className="hover:bg-gray-50/60 transition-colors">
+                      <tr
+                        key={p.id}
+                        className={`hover:bg-gray-50/60 transition-colors ${
+                          !p.is_active ? 'bg-gray-50/40 opacity-80 hover:opacity-100' : ''
+                        }`}
+                      >
                         <td className="py-3.5 px-5">
                           <div className="w-13 h-13 bg-gray-100 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-200/60">
                             {imgUrl ? (
@@ -765,7 +791,46 @@ export default function AdminDashboard() {
                             {p.stock} units
                           </span>
                         </td>
+                        <td className="py-3.5 px-5">
+                          {p.is_active ? (
+                            <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-full text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Active (Live)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-full text-[11px] bg-gray-100 text-gray-600 border border-gray-300">
+                              <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                              Inactive (Hidden)
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-5 text-right space-x-2 whitespace-nowrap">
+                          {/* Toggle Active/Inactive Button */}
+                          <button
+                            onClick={() => handleToggleProductActive(p)}
+                            className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition inline-flex items-center gap-1.5 cursor-pointer border ${
+                              p.is_active
+                                ? 'bg-gray-100 hover:bg-amber-50 hover:text-amber-800 text-gray-700 border-gray-200'
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                            }`}
+                            title={
+                              p.is_active
+                                ? 'Deactivate (Hide from buyer store)'
+                                : 'Activate (Show in buyer store)'
+                            }
+                          >
+                            {p.is_active ? (
+                              <>
+                                <EyeOff className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Deactivate</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Activate</span>
+                              </>
+                            )}
+                          </button>
                           <button
                             onClick={() =>
                               setEditProduct({
