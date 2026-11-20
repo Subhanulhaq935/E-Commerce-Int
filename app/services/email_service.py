@@ -290,7 +290,7 @@ E-Shop.pk Team
 
             # 1. Try Port 587 with STARTTLS first
             try:
-                with smtplib.SMTP(settings.SMTP_HOST, int(settings.SMTP_PORT or 587), timeout=15) as server:
+                with smtplib.SMTP(settings.SMTP_HOST, int(settings.SMTP_PORT or 587), timeout=5) as server:
                     server.ehlo()
                     server.starttls()
                     server.ehlo()
@@ -303,7 +303,7 @@ E-Shop.pk Team
                 print(f"[EMAIL SERVICE] Port 587 failed: {e587}. Trying Port 465 (SSL) fallback...")
                 # 2. Fallback to Port 465 (SSL) if ISP blocks Port 587
                 try:
-                    with smtplib.SMTP_SSL(settings.SMTP_HOST, 465, timeout=15) as server:
+                    with smtplib.SMTP_SSL(settings.SMTP_HOST, 465, timeout=5) as server:
                         server.login(clean_email, clean_password)
                         server.sendmail(clean_email, [recipient_email], msg.as_string())
                     sent = True

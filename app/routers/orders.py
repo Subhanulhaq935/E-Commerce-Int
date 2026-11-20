@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -29,10 +29,11 @@ def checkout(
 )
 def guest_checkout(
     data: GuestCheckoutRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
     """Guest checkout (Full Name, Email, Phone, Shipping Address, Items list)"""
-    return OrderService.guest_checkout(db, data=data)
+    return OrderService.guest_checkout(db, data=data, background_tasks=background_tasks)
 
 
 @router.get(

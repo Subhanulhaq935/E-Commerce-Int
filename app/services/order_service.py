@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 import secrets
-from typing import Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -129,7 +129,11 @@ class OrderService:
             raise
 
     @staticmethod
-    def guest_checkout(db: Session, data: GuestCheckoutRequest) -> Order:
+    def guest_checkout(
+        db: Session,
+        data: GuestCheckoutRequest,
+        background_tasks: Any = None,
+    ) -> Order:
         """Place order for unauthenticated guest customers and dispatch confirmation email"""
         if not data.items:
             raise HTTPException(
@@ -225,9 +229,17 @@ class OrderService:
             # 9. Return refreshed order with all items
             refreshed_order = OrderRepository.get_order_by_id(db, order_id=order.id)
 
-            # 10. Automatically send confirmation email via Gmail SMTP (Fail-safe)
+            # 10. Automatically send confirmation email asynchronously (Instant UI response)
             if refreshed_order:
-                EmailService.send_guest_order_confirmation(refreshed_order)
+                if background_tasks:
+                    background_tasks.add_task(EmailService.send_guest_order_confirmation, refreshed_order)
+                else:
+                    import threading
+                    threading.Thread(
+                        target=EmailService.send_guest_order_confirmation,
+                        args=(refreshed_order,),
+                        daemon=True,
+                    ).start()
 
             return refreshed_order
 
