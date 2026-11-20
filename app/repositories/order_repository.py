@@ -13,15 +13,29 @@ class OrderRepository:
     @staticmethod
     def create_order(
         db: Session,
-        buyer_id: int,
-        shipping_address_id: int,
         total_amount: Decimal,
+        buyer_id: Optional[int] = None,
+        shipping_address_id: Optional[int] = None,
+        guest_name: Optional[str] = None,
+        guest_email: Optional[str] = None,
+        guest_phone: Optional[str] = None,
+        guest_address: Optional[str] = None,
+        guest_city: Optional[str] = None,
+        guest_postal_code: Optional[str] = None,
+        tracking_token: Optional[str] = None,
     ) -> Order:
         order = Order(
             buyer_id=buyer_id,
             shipping_address_id=shipping_address_id,
             total_amount=total_amount,
             status=OrderStatus.pending,
+            guest_name=guest_name,
+            guest_email=guest_email,
+            guest_phone=guest_phone,
+            guest_address=guest_address,
+            guest_city=guest_city,
+            guest_postal_code=guest_postal_code,
+            tracking_token=tracking_token,
         )
         db.add(order)
         db.flush()
@@ -73,8 +87,22 @@ class OrderRepository:
                 selectinload(Order.items),
                 selectinload(Order.payment),
                 selectinload(Order.shipping_address),
+                selectinload(Order.buyer),
             )
             .where(Order.id == order_id)
+        )
+
+    @staticmethod
+    def get_by_tracking_token(db: Session, token: str) -> Optional[Order]:
+        return db.scalar(
+            select(Order)
+            .options(
+                selectinload(Order.items),
+                selectinload(Order.payment),
+                selectinload(Order.shipping_address),
+                selectinload(Order.buyer),
+            )
+            .where(Order.tracking_token == token)
         )
 
     @staticmethod
@@ -108,6 +136,7 @@ class OrderRepository:
                 selectinload(Order.items),
                 selectinload(Order.payment),
                 selectinload(Order.shipping_address),
+                selectinload(Order.buyer),
             )
             .order_by(Order.created_at.desc())
         )

@@ -26,8 +26,8 @@ api.interceptors.response.use(
       localStorage.removeItem('token')
       localStorage.removeItem('user')
 
-      // Sirf protected pages par login par bhejein, public pages (Home, Products, Register) par browsing block na karein
-      const protectedPaths = ['/admin', '/checkout', '/my-orders']
+      // Sirf protected pages par login par bhejein, public pages (Home, Products, Checkout, Register) par browsing block na karein
+      const protectedPaths = ['/admin', '/my-orders']
       const currentPath = window.location.pathname
       if (protectedPaths.some((p) => currentPath.startsWith(p))) {
         window.location.href = '/login'

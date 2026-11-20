@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.dependencies.auth import get_current_user, require_buyer
 from app.models.user import User
-from app.schemas.order import CheckoutRequest, OrderResponse
+from app.schemas.order import CheckoutRequest, GuestCheckoutRequest, OrderResponse
 from app.services.order_service import OrderService
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
@@ -17,8 +17,36 @@ def checkout(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_buyer),
 ):
-    """Cart checkout karein aur single-vendor COD order create karein (Buyer only)"""
+    """Cart checkout karein aur single-vendor COD order create karein (Registered Buyer only)"""
     return OrderService.checkout(db, user_id=current_user.id, data=data)
+
+
+@router.post(
+    "/guest",
+    response_model=OrderResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Place order as guest customer without login or registration",
+)
+def guest_checkout(
+    data: GuestCheckoutRequest,
+    db: Session = Depends(get_db),
+):
+    """Guest checkout (Full Name, Email, Phone, Shipping Address, Items list)"""
+    return OrderService.guest_checkout(db, data=data)
+
+
+@router.get(
+    "/track/{tracking_token}",
+    response_model=OrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Track order details using secure tracking token (No auth required)",
+)
+def track_order(
+    tracking_token: str,
+    db: Session = Depends(get_db),
+):
+    """Publicly track guest order status, delivery progress, and items via secure token"""
+    return OrderService.get_order_by_tracking_token(db, token=tracking_token)
 
 
 @router.get("/my-orders", response_model=List[OrderResponse])

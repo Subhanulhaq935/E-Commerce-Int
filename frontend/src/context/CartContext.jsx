@@ -4,17 +4,49 @@ import { useAuth } from './AuthContext'
 
 const CartContext = createContext()
 
+const GUEST_CART_KEY = 'guest_cart'
+
+const getGuestCart = () => {
+  try {
+    const raw = localStorage.getItem(GUEST_CART_KEY)
+    if (!raw) return { items: [], total: 0 }
+    const parsed = JSON.parse(raw)
+    return {
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+      total: Number(parsed.total) || 0,
+    }
+  } catch {
+    return { items: [], total: 0 }
+  }
+}
+
+const saveGuestCart = (cartObj) => {
+  try {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartObj))
+  } catch (err) {
+    console.error('Failed to save guest cart to localStorage:', err)
+  }
+}
+
 export const CartProvider = ({ children }) => {
   const { user } = useAuth()
-  const [cart, setCart] = useState(null)
+  const [cart, setCart] = useState(() => (user ? null : getGuestCart()))
   const [loading, setLoading] = useState(false)
   const updateTimers = useRef(new Map())
 
   const fetchCart = async () => {
-    if (!user || user.role === 'admin') {
+    if (user?.role === 'admin') {
       setCart(null)
       return
     }
+
+    if (!user) {
+      // Guest: load from localStorage
+      setCart(getGuestCart())
+      return
+    }
+
+    // Registered Buyer: load from backend
     try {
       setLoading(true)
       const res = await api.get('/cart/')
@@ -30,12 +62,14 @@ export const CartProvider = ({ children }) => {
     fetchCart()
   }, [user])
 
-  // 100% Optimistic Instant Add to Cart (0ms - No Loading, Immediate Badge & State Update)
+  // 100% Optimistic Instant Add to Cart (0ms for both Guests and Registered Buyers)
   const addToCart = (productOrId, quantity = 1) => {
     const productId = typeof productOrId === 'object' ? productOrId.id : productOrId
     const productObj = typeof productOrId === 'object' ? productOrId : null
 
-    // 1. INSTANT (0ms) memory update: updates cart count & items immediately!
+    // 1. INSTANT (0ms) memory & local state update
+    let updatedCartObj = null
+
     setCart((prevCart) => {
       const existingItems = prevCart?.items ? [...prevCart.items] : []
       const existingIndex = existingItems.findIndex((it) => it.product_id === productId)
@@ -66,14 +100,25 @@ export const CartProvider = ({ children }) => {
         0
       )
 
-      return {
+      updatedCartObj = {
         ...prevCart,
         items: existingItems,
         total: newTotal,
       }
+
+      if (!user) {
+        saveGuestCart(updatedCartObj)
+      }
+
+      return updatedCartObj
     })
 
-    // 2. Background sync silently with backend
+    // If guest, local storage update is all we need
+    if (!user) {
+      return Promise.resolve(updatedCartObj)
+    }
+
+    // 2. Background sync silently with backend for registered user
     return api
       .post('/cart/items', {
         product_id: productId,
@@ -91,7 +136,7 @@ export const CartProvider = ({ children }) => {
       })
   }
 
-  // Lightning-fast debounced quantity update (0ms UI reaction on every click + single debounced network call)
+  // Instant debounced quantity update (0ms UI reaction on every click)
   const updateQuantity = (itemId, quantity) => {
     if (quantity <= 0) {
       if (updateTimers.current.has(itemId)) {
@@ -101,11 +146,13 @@ export const CartProvider = ({ children }) => {
       return removeFromCart(itemId)
     }
 
-    // 1. INSTANT (0ms) screen update on EVERY single click!
+    // 1. INSTANT (0ms) screen update
+    let updatedCartObj = null
+
     setCart((prevCart) => {
       if (!prevCart || !prevCart.items) return prevCart
       const updatedItems = prevCart.items.map((it) => {
-        if (it.id === itemId) {
+        if (it.id === itemId || it.product_id === itemId) {
           const subtotal = Number(it.unit_price) * quantity
           return { ...it, quantity, subtotal }
         }
@@ -115,14 +162,23 @@ export const CartProvider = ({ children }) => {
         (sum, it) => sum + Number(it.unit_price) * it.quantity,
         0
       )
-      return {
+      updatedCartObj = {
         ...prevCart,
         items: updatedItems,
         total: newTotal,
       }
+      if (!user) {
+        saveGuestCart(updatedCartObj)
+      }
+      return updatedCartObj
     })
 
-    // 2. Debounce the network request by 350ms so rapid clicks are unified
+    // If guest, immediate resolution
+    if (!user) {
+      return Promise.resolve(updatedCartObj)
+    }
+
+    // 2. Debounce the network request by 350ms for registered users
     if (updateTimers.current.has(itemId)) {
       clearTimeout(updateTimers.current.get(itemId))
     }
@@ -137,7 +193,6 @@ export const CartProvider = ({ children }) => {
           }
           resolve(res.data)
         } catch (err) {
-          // If rejected (e.g. stock exceeded or 404), fetch fresh server state
           const fresh = await api.get('/cart/').catch(() => null)
           if (fresh?.data) {
             setCart(fresh.data)
@@ -150,7 +205,7 @@ export const CartProvider = ({ children }) => {
     })
   }
 
-  // Optimistic Instant Remove (Never resurrects deleted items)
+  // Optimistic Instant Remove
   const removeFromCart = async (itemId) => {
     if (updateTimers.current.has(itemId)) {
       clearTimeout(updateTimers.current.get(itemId))
@@ -158,21 +213,31 @@ export const CartProvider = ({ children }) => {
     }
 
     // 1. Instant local removal (0ms UI feedback)
+    let updatedCartObj = null
+
     setCart((prevCart) => {
       if (!prevCart || !prevCart.items) return prevCart
-      const updatedItems = prevCart.items.filter((it) => it.id !== itemId)
+      const updatedItems = prevCart.items.filter((it) => it.id !== itemId && it.product_id !== itemId)
       const newTotal = updatedItems.reduce(
         (sum, it) => sum + Number(it.unit_price) * it.quantity,
         0
       )
-      return {
+      updatedCartObj = {
         ...prevCart,
         items: updatedItems,
         total: newTotal,
       }
+      if (!user) {
+        saveGuestCart(updatedCartObj)
+      }
+      return updatedCartObj
     })
 
-    // 2. Background sync with backend
+    if (!user) {
+      return Promise.resolve(updatedCartObj)
+    }
+
+    // 2. Background sync with backend for registered user
     try {
       const res = await api.delete(`/cart/items/${itemId}`)
       if (res.data) {
@@ -189,7 +254,14 @@ export const CartProvider = ({ children }) => {
   }
 
   const clearCartState = () => {
-    setCart(null)
+    if (!user) {
+      try {
+        localStorage.removeItem(GUEST_CART_KEY)
+      } catch {}
+      setCart({ items: [], total: 0 })
+    } else {
+      setCart(null)
+    }
   }
 
   const cartCount = cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0

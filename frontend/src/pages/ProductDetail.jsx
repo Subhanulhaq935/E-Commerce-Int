@@ -84,18 +84,13 @@ export default function ProductDetail() {
   }, [id])
 
   const handleAddToCart = () => {
-    if (!user) {
-      navigate('/login')
-      return
-    }
-
-    // 0ms INSTANT REACTION! NO LOADING SPINNER!
+    // 0ms INSTANT REACTION! NO LOADING SPINNER FOR GUESTS & REGISTERED USERS!
     setAddedSuccess(true)
     setMessage({ type: 'success', text: 'Item added to your cart successfully!' })
     setTimeout(() => setAddedSuccess(false), 2000)
     setTimeout(() => setMessage({ type: '', text: '' }), 2500)
 
-    // Silently sync with backend in background
+    // Silently sync with backend (or update guest cart in localStorage)
     addToCart(product, quantity).catch((err) => {
       setAddedSuccess(false)
       const msg = err.response?.data?.detail || 'Failed to add item to cart'

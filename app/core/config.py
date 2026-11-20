@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str | None = None
     CLOUDINARY_API_KEY: str | None = None
     CLOUDINARY_API_SECRET: str | None = None
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_EMAIL: str | None = None
+    SMTP_PASSWORD: str | None = None
+    FRONTEND_URL: str = "https://e-commerce-int.vercel.app"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

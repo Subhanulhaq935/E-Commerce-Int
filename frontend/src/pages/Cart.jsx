@@ -29,28 +29,6 @@ export default function Cart() {
     removeFromCart(itemId)
   }
 
-  if (!user) {
-    return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center">
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-8">
-          <div className="w-16 h-16 rounded-2xl bg-orange-50 text-primary-orange flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-8 h-8" />
-          </div>
-          <h2 className="text-2xl font-extrabold text-charcoal mb-2">Your Cart is Waiting</h2>
-          <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-            Please sign in to view and manage your shopping cart items.
-          </p>
-          <Link
-            to="/login"
-            className="bg-primary-orange hover:bg-primary-orange-hover text-white font-bold px-7 py-3 rounded-xl shadow-md shadow-orange-500/20 inline-block transition"
-          >
-            Sign In to Continue
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   if (loading && !cart) {
     return (
       <div className="min-h-[55vh] flex flex-col items-center justify-center text-gray-500 gap-3">
@@ -173,9 +151,11 @@ export default function Cart() {
                       Rs. {Number(item.unit_price).toLocaleString()}{' '}
                       <span className="text-xs font-normal text-gray-400">/ unit</span>
                     </p>
-                    <span className="inline-block mt-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                      {item.product?.stock} units in stock
-                    </span>
+                    {(item.product?.stock !== undefined || item.stock !== undefined) && (
+                      <span className="inline-block mt-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                        {item.product?.stock ?? item.stock} units in stock
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -194,7 +174,10 @@ export default function Cart() {
                     </span>
                     <button
                       onClick={() => handleUpdateQty(item.id, item.quantity + 1)}
-                      disabled={item.quantity >= item.product?.stock}
+                      disabled={
+                        (item.product?.stock && item.quantity >= item.product.stock) ||
+                        (item.stock && item.quantity >= item.stock)
+                      }
                       className="w-8 h-8 rounded-lg text-charcoal hover:bg-white hover:shadow-xs transition-all font-extrabold disabled:opacity-30 cursor-pointer active:scale-90 select-none flex items-center justify-center text-base"
                       title="Increase quantity"
                     >

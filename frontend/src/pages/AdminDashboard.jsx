@@ -572,10 +572,24 @@ export default function AdminDashboard() {
                   <tr key={ord.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="py-4 px-5 font-extrabold text-charcoal text-sm">#{ord.id}</td>
                     <td className="py-4 px-5">
-                      <span className="font-bold text-charcoal block">
-                        {ord.user?.name || 'Customer'}
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-charcoal block">
+                          {ord.guest_name || ord.buyer?.name || ord.user?.name || 'Customer'}
+                        </span>
+                        {Boolean(ord.guest_name || ord.tracking_token) && (
+                          <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md">
+                            Guest
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-gray-400 text-[11px] block">
+                        {ord.guest_email || ord.buyer?.email || ord.user?.email || 'No email provided'}
                       </span>
-                      <span className="text-gray-400 text-[11px]">{ord.user?.email}</span>
+                      {(ord.guest_city || ord.shipping_address?.city) && (
+                        <span className="text-[10px] text-gray-500 font-medium block">
+                          📍 {ord.guest_city || ord.shipping_address?.city}
+                        </span>
+                      )}
                     </td>
                     <td className="py-4 px-5 space-y-1">
                       {ord.items?.map((it) => (
