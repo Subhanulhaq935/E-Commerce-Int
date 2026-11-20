@@ -3,6 +3,12 @@ import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { resolveImageUrl } from '../utils/imageUrl'
 import {
+  getCachedProducts,
+  setCachedProducts,
+  getCachedCategories,
+  setCachedCategories,
+} from '../utils/catalogCache'
+import {
   ShoppingBag,
   Star,
   Package,
@@ -16,11 +22,15 @@ import {
 } from 'lucide-react'
 
 export default function Home() {
-  const [products, setProducts] = useState([])
-  const [categories, setCategories] = useState([])
+  const initialProducts = getCachedProducts() || []
+  const initialCategories = getCachedCategories() || []
+
+  const [products, setProducts] = useState(initialProducts)
+  const [categories, setCategories] = useState(initialCategories)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [loading, setLoading] = useState(true)
+  // If products are already in cache, do not show loading spinner (0ms instant display!)
+  const [loading, setLoading] = useState(initialProducts.length === 0)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,6 +41,8 @@ export default function Home() {
         ])
         setProducts(prodRes.data)
         setCategories(catRes.data)
+        setCachedProducts(prodRes.data)
+        setCachedCategories(catRes.data)
       } catch (err) {
         console.error('Error fetching catalog:', err)
       } finally {
@@ -236,6 +248,7 @@ export default function Home() {
                 {/* Product Image Container */}
                 <Link
                   to={`/products/${p.id}`}
+                  state={{ product: p }}
                   className="h-52 bg-gradient-to-b from-gray-50 to-gray-100/70 relative overflow-hidden flex items-center justify-center block"
                 >
                   {/* Floating Category & Stock Badges */}
@@ -309,6 +322,7 @@ export default function Home() {
 
                     <Link
                       to={`/products/${p.id}`}
+                      state={{ product: p }}
                       className="font-bold text-charcoal text-base line-clamp-1 group-hover:text-primary-orange transition-colors"
                     >
                       {p.name}
@@ -330,6 +344,7 @@ export default function Home() {
                     </div>
                     <Link
                       to={`/products/${p.id}`}
+                      state={{ product: p }}
                       className={`text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm ${
                         p.stock > 0
                           ? 'bg-primary-orange hover:bg-primary-orange-hover text-white shadow-orange-500/20 hover:shadow-md hover:shadow-orange-500/30'

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import api from '../api/client'
 import { resolveImageUrl } from '../utils/imageUrl'
+import { getCachedProduct, setCachedProduct, getCachedCategories } from '../utils/catalogCache'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -22,33 +23,50 @@ import {
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const { addToCart } = useCart()
 
-  const [product, setProduct] = useState(null)
-  const [categoryName, setCategoryName] = useState('')
+  // Instant preloaded data from navigation state or in-memory catalog cache
+  const initialProduct = location.state?.product || getCachedProduct(id)
+  const initialCategories = getCachedCategories() || []
+  const initialCatName =
+    initialCategories.find((c) => c.id === initialProduct?.category_id)?.name || ''
+
+  const [product, setProduct] = useState(initialProduct || null)
+  const [categoryName, setCategoryName] = useState(initialCatName)
   const [reviews, setReviews] = useState([])
-  const [selectedImage, setSelectedImage] = useState(null)
+  const [selectedImage, setSelectedImage] = useState(() => {
+    const primary =
+      initialProduct?.images?.find((img) => img.is_primary) || initialProduct?.images?.[0]
+    return primary ? primary.image_url : null
+  })
   const [imageError, setImageError] = useState(false)
   const [quantity, setQuantity] = useState(1)
-  const [loading, setLoading] = useState(true)
+  // If product is already available in cache or navigation state, do NOT show loading (0ms instant display!)
+  const [loading, setLoading] = useState(!initialProduct)
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
       try {
-        setLoading(true)
+        if (!initialProduct) {
+          setLoading(true)
+        }
         const [prodRes, catRes] = await Promise.all([
           api.get(`/products/${id}`),
           api.get('/categories/').catch(() => ({ data: [] })),
         ])
         setProduct(prodRes.data)
+        setCachedProduct(id, prodRes.data)
+
         const foundCat = catRes.data?.find((c) => c.id === prodRes.data.category_id)
         if (foundCat) setCategoryName(foundCat.name)
 
-        const primary = prodRes.data.images?.find((img) => img.is_primary) || prodRes.data.images?.[0]
-        if (primary) setSelectedImage(primary.image_url)
+        const primary =
+          prodRes.data.images?.find((img) => img.is_primary) || prodRes.data.images?.[0]
+        if (primary && !selectedImage) setSelectedImage(primary.image_url)
 
         try {
           const revRes = await api.get(`/products/${id}/reviews`)

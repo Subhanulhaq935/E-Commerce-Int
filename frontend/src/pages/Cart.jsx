@@ -147,6 +147,7 @@ export default function Cart() {
                 <div className="flex items-center gap-4 w-full sm:w-auto">
                   <Link
                     to={`/products/${item.product_id}`}
+                    state={{ product: item.product }}
                     className="w-22 h-22 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-200/60 flex-shrink-0 group"
                   >
                     {imgUrl ? (
@@ -163,6 +164,7 @@ export default function Cart() {
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/products/${item.product_id}`}
+                      state={{ product: item.product }}
                       className="font-bold text-base text-charcoal hover:text-primary-orange transition line-clamp-1"
                     >
                       {item.product?.name}

@@ -277,6 +277,7 @@ export default function MyOrders() {
                         <div className="flex items-center gap-4 w-full sm:w-auto">
                           <Link
                             to={`/products/${item.product_id}`}
+                            state={{ product: pInfo }}
                             className="w-16 h-16 bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-200/60 flex-shrink-0 group hover:border-primary-orange/50 transition"
                           >
                             {imgUrl ? (
@@ -292,6 +293,7 @@ export default function MyOrders() {
                           <div>
                             <Link
                               to={`/products/${item.product_id}`}
+                              state={{ product: pInfo }}
                               className="font-extrabold text-charcoal hover:text-primary-orange transition text-sm sm:text-base line-clamp-1"
                             >
                               {productName}
