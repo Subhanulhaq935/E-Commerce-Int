@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import api from '../api/client'
 import { resolveImageUrl } from '../utils/imageUrl'
@@ -65,6 +65,13 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(!initialProduct)
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+
+  // Always ensure product detail page opens from the very top (scroll position 0) immediately
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+  }, [id])
 
   // Review submission state (supports both authenticated buyers & guest visitors)
   const [guestName, setGuestName] = useState('')
