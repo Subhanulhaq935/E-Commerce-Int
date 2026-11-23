@@ -78,12 +78,12 @@ export default function ProductDetail() {
     setReviewMessage({ type: '', text: '' })
 
     if (!user && (!guestName || !guestName.trim())) {
-      setReviewMessage({ type: 'error', text: 'Please enter your name.' })
+      setReviewMessage({ type: 'error', text: 'Please enter your name to submit a review.' })
       return
     }
 
     if (!reviewComment || !reviewComment.trim()) {
-      setReviewMessage({ type: 'error', text: 'Please write a review comment.' })
+      setReviewMessage({ type: 'error', text: 'Please share your feedback in the review comment.' })
       return
     }
 
@@ -124,7 +124,7 @@ export default function ProductDetail() {
     } catch (err) {
       setReviewMessage({
         type: 'error',
-        text: err.response?.data?.detail || 'Failed to submit review. Please try again.',
+        text: err.response?.data?.detail || 'Unable to submit your review. Please try again.',
       })
     } finally {
       setSubmittingReview(false)
@@ -184,7 +184,7 @@ export default function ProductDetail() {
       if (!selectedSize) {
         setMessage({
           type: 'error',
-          text: 'Please select an available size (Small, Medium, or Large) before adding to cart.',
+          text: 'Please select an available size before adding to cart.',
         })
         setTimeout(() => setMessage({ type: '', text: '' }), 3500)
         return
@@ -213,7 +213,7 @@ export default function ProductDetail() {
     // Silently sync with backend (or update guest cart in localStorage)
     addToCart(product, quantity, selectedSize).catch((err) => {
       setAddedSuccess(false)
-      const msg = err.response?.data?.detail || 'Failed to add item to cart'
+      const msg = err.response?.data?.detail || 'Unable to add item to cart. Please try again.'
       setMessage({ type: 'error', text: msg })
       setTimeout(() => setMessage({ type: '', text: '' }), 3000)
     })
@@ -223,7 +223,7 @@ export default function ProductDetail() {
     return (
       <div className="min-h-[65vh] flex flex-col items-center justify-center text-gray-500 gap-3">
         <Loader2 className="w-10 h-10 animate-spin text-primary-orange" />
-        <span className="text-sm font-semibold text-gray-600">Loading product showcase...</span>
+        <span className="text-sm font-semibold text-gray-600">Loading product details...</span>
       </div>
     )
   }
@@ -242,7 +242,7 @@ export default function ProductDetail() {
             className="bg-primary-orange hover:bg-primary-orange-hover text-white font-bold px-6 py-3 rounded-xl shadow-md inline-flex items-center gap-2 transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            Return to Shop
+            Browse Catalog
           </Link>
         </div>
       </div>
@@ -287,10 +287,10 @@ export default function ProductDetail() {
       <div className="flex items-center justify-between mb-6">
         <nav className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 overflow-x-auto py-1">
           <Link to="/" className="hover:text-primary-orange transition-colors">
-            Shop
+            Catalog
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-500 whitespace-nowrap">{categoryName || 'Catalog'}</span>
+          <span className="text-slate-500 whitespace-nowrap">{categoryName || 'General'}</span>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
           <span className="text-slate-900 font-extrabold truncate max-w-[140px] sm:max-w-xs">
             {product.name}
@@ -302,7 +302,7 @@ export default function ProductDetail() {
           className="inline-flex items-center text-xs sm:text-sm font-bold text-slate-700 hover:text-primary-orange transition bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs hover:shadow-xs"
         >
           <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-          Back to Shop
+          Back to Catalog
         </Link>
       </div>
 
@@ -321,7 +321,7 @@ export default function ProductDetail() {
             ) : (
               <div className="flex flex-col items-center text-slate-300">
                 <ShoppingBag className="w-20 h-20 mb-2 stroke-[1.5]" />
-                <span className="text-xs font-semibold text-slate-400">Product Preview</span>
+                <span className="text-xs font-semibold text-slate-400">No Image Available</span>
               </div>
             )}
           </div>
@@ -409,7 +409,7 @@ export default function ProductDetail() {
                   <>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">
-                        Normal:
+                        Original Price:
                       </span>
                       <span className="text-sm sm:text-base font-bold text-slate-400 line-through">
                         Rs. {activeNormalPrice.toLocaleString()}
@@ -425,7 +425,7 @@ export default function ProductDetail() {
                 ) : (
                   <>
                     <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-extrabold">
-                      {selectedSize ? `Price for Size ${selectedSize}` : 'Special Store Price'}
+                      {selectedSize ? `Price for Size ${selectedSize}` : 'Price'}
                     </span>
                     <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mt-0.5 block">
                       Rs. {activeNormalPrice.toLocaleString()}
@@ -434,7 +434,7 @@ export default function ProductDetail() {
                 )}
               </div>
               <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200/60 px-3 py-1 rounded-xl">
-                Free Delivery
+                Free Delivery (COD)
               </span>
             </div>
 
@@ -452,7 +452,7 @@ export default function ProductDetail() {
                     </span>
                   ) : (
                     <span className="text-[11px] text-amber-800 font-bold bg-amber-100/80 px-2.5 py-0.5 rounded-full">
-                      Required
+                      Please select
                     </span>
                   )}
                 </div>
@@ -491,14 +491,14 @@ export default function ProductDetail() {
                           </span>
                         )}
                         {isOutOfStock ? (
-                          <span className="text-[10px] text-rose-500 font-bold">(Sold Out)</span>
+                          <span className="text-[10px] text-rose-500 font-bold">(Out of Stock)</span>
                         ) : (
                           <span
                             className={`text-[10px] ${
                               isSelected ? 'text-slate-300' : 'text-slate-400'
                             }`}
                           >
-                            ({s.stock} left)
+                            ({s.stock} in stock)
                           </span>
                         )}
                       </button>
@@ -511,10 +511,10 @@ export default function ProductDetail() {
             {/* Description */}
             <div className="py-5 my-2">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">
-                Product Details
+                Product Overview
               </h3>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                {product.description || 'Premium quality verified item available with fast Cash on Delivery across Pakistan.'}
+                {product.description || 'Premium quality verified item crafted to the highest standards, backed by authentic customer reviews and free Cash on Delivery across Pakistan.'}
               </p>
             </div>
 
@@ -522,15 +522,15 @@ export default function ProductDetail() {
             <div className="grid grid-cols-3 gap-2.5 sm:gap-3 my-4 text-xs text-slate-700">
               <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl text-center sm:text-left">
                 <Truck className="w-5 h-5 text-primary-orange flex-shrink-0" />
-                <span className="font-bold">Doorstep COD</span>
+                <span className="font-bold">Cash on Delivery</span>
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl text-center sm:text-left">
                 <ShieldCheck className="w-5 h-5 text-primary-orange flex-shrink-0" />
-                <span className="font-bold">100% Original</span>
+                <span className="font-bold">100% Authentic</span>
               </div>
               <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl text-center sm:text-left">
                 <RotateCcw className="w-5 h-5 text-primary-orange flex-shrink-0" />
-                <span className="font-bold">Verified Reviews</span>
+                <span className="font-bold">Customer Verified</span>
               </div>
             </div>
           </div>
@@ -587,7 +587,7 @@ export default function ProductDetail() {
                   {addedSuccess ? (
                     <>
                       <CheckCircle className="w-5 h-5 text-white animate-bounce" />
-                      <span>Added to Shopping Bag!</span>
+                      <span>Added to Cart!</span>
                     </>
                   ) : (
                     <>
@@ -669,7 +669,7 @@ export default function ProductDetail() {
                 <span className="text-gray-400">Reviewing as:</span>
                 <span className="text-charcoal font-black">{user.name}</span>
                 <span className="text-[10px] text-primary-orange bg-orange-50 px-2 py-0.5 rounded-full font-extrabold border border-orange-200/50">
-                  Account Verified
+                  Verified Customer
                 </span>
               </div>
             ) : (
@@ -682,7 +682,7 @@ export default function ProductDetail() {
                   required
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="Enter your name (e.g. Ali)"
+                  placeholder="e.g. Muhammad Ali"
                   className="w-full sm:max-w-md px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange transition"
                 />
               </div>
@@ -717,8 +717,8 @@ export default function ProductDetail() {
                     : reviewRating === 3
                     ? '3 - Average'
                     : reviewRating === 2
-                    ? '2 - Poor'
-                    : '1 - Terrible'}
+                    ? '2 - Below Average'
+                    : '1 - Unsatisfactory'}
                 </span>
               </div>
             </div>
@@ -732,7 +732,7 @@ export default function ProductDetail() {
                 required
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                placeholder="Write your experience with this product..."
+                placeholder="Share your experience regarding product quality, fit, and delivery..."
                 className="w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-orange transition resize-none"
               />
             </div>

@@ -75,7 +75,7 @@ export default function MyOrders() {
     e.preventDefault()
     setReviewMessage({ type: '', text: '' })
     if (!comment || !comment.trim()) {
-      setReviewMessage({ type: 'error', text: 'Please write a review comment.' })
+      setReviewMessage({ type: 'error', text: 'Please share your feedback in the review comment.' })
       return
     }
     setSubmittingReview(true)
@@ -84,7 +84,7 @@ export default function MyOrders() {
         rating,
         comment: comment.trim(),
       })
-      setReviewMessage({ type: 'success', text: 'Thank you! Your verified review has been posted.' })
+      setReviewMessage({ type: 'success', text: 'Thank you! Your verified review has been submitted successfully.' })
       setTimeout(() => {
         setReviewModal({ open: false, productId: null, productName: '', productImage: null })
         setComment('')
@@ -94,7 +94,7 @@ export default function MyOrders() {
     } catch (err) {
       setReviewMessage({
         type: 'error',
-        text: err.response?.data?.detail || 'Failed to submit review',
+        text: err.response?.data?.detail || 'Unable to submit your review. Please try again.',
       })
     } finally {
       setSubmittingReview(false)
@@ -174,13 +174,13 @@ export default function MyOrders() {
           </div>
           <h3 className="text-xl font-extrabold text-charcoal">No Orders Yet</h3>
           <p className="text-gray-500 text-sm mt-1.5 mb-6">
-            You haven't placed any orders so far. Start exploring our catalog!
+            You haven't placed any orders yet. Discover our curated catalog and start shopping!
           </p>
           <Link
             to="/"
             className="bg-primary-orange hover:bg-primary-orange-hover text-white font-bold px-7 py-3 rounded-xl shadow-md shadow-orange-500/20 inline-block transition"
           >
-            Start Shopping
+            Browse Catalog
           </Link>
         </div>
       ) : (
@@ -442,7 +442,7 @@ export default function MyOrders() {
                   required
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  placeholder="Share your thoughts on product quality, packaging, and delivery..."
+                  placeholder="Share your experience regarding product quality, fit, and delivery..."
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
                 />
               </div>

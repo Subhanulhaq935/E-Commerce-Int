@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 
 // Backend errors ko safe readable string mein convert karne ke liye taake React crash na ho
-const extractErrorMessage = (err, fallback = 'An error occurred. Please try again.') => {
+const extractErrorMessage = (err, fallback = 'Something went wrong. Please check your details and try again.') => {
   const detail = err?.response?.data?.detail
   if (!detail) return fallback
   if (typeof detail === 'string') return detail
@@ -131,7 +131,7 @@ export default function Checkout() {
       setShowAddAddress(false)
     } catch (err) {
       console.error('Save address error:', err)
-      const msg = extractErrorMessage(err, 'Failed to save address. Please verify all fields.')
+      const msg = extractErrorMessage(err, 'Failed to save address. Please verify all required fields.')
       setError(msg)
       setTimeout(() => setError(''), 5000)
     } finally {
@@ -180,7 +180,7 @@ export default function Checkout() {
         const postalCode = guestForm.guest_postal_code.trim()
 
         if (!name || !email || !phone || !address || !city) {
-          setError('Please fill in all required fields (Name, Email, Phone, Address, City).')
+          setError('Please fill in all required delivery fields (Name, Email, Phone, Address, City).')
           setPlacingOrder(false)
           return
         }
@@ -214,7 +214,7 @@ export default function Checkout() {
       }
     } catch (err) {
       console.error('Checkout error:', err)
-      const msg = extractErrorMessage(err, 'Failed to place order. Please check your information and try again.')
+      const msg = extractErrorMessage(err, 'Unable to place your order. Please check your details and try again.')
       setError(msg)
       setTimeout(() => setError(''), 5000)
     } finally {
@@ -254,7 +254,7 @@ export default function Checkout() {
               <div>
                 <p className="font-bold">Confirmation Email Sent</p>
                 <p className="text-blue-700 mt-0.5">
-                  We have dispatched order details and your secure tracking link to{' '}
+                  We have sent your complete order summary and real-time tracking link to{' '}
                   <strong className="underline">{orderSuccess.guest_email}</strong>.
                 </p>
               </div>
@@ -325,7 +325,7 @@ export default function Checkout() {
       <div className="max-w-md mx-auto px-4 py-20 text-center">
         <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-10">
           <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-extrabold text-charcoal mb-2">Your Cart is Empty</h2>
+          <h2 className="text-2xl font-extrabold text-charcoal mb-2">Your Shopping Cart is Empty</h2>
           <p className="text-gray-500 text-sm mb-6">
             Add products to your cart before proceeding to checkout.
           </p>
@@ -333,7 +333,7 @@ export default function Checkout() {
             to="/"
             className="bg-primary-orange hover:bg-primary-orange-hover text-white font-bold px-7 py-3 rounded-xl shadow-md inline-block"
           >
-            Return to Shop
+            Browse Products
           </Link>
         </div>
       </div>
@@ -406,7 +406,7 @@ export default function Checkout() {
                     <h2 className="text-lg font-extrabold text-charcoal leading-tight">
                       Delivery Address
                     </h2>
-                    <p className="text-xs text-gray-400">Where should we deliver your order?</p>
+                    <p className="text-xs text-gray-400">Select or add your delivery address</p>
                   </div>
                 </div>
                 <button
@@ -430,7 +430,7 @@ export default function Checkout() {
                     onClick={openAddModal}
                     className="bg-primary-orange hover:bg-primary-orange-hover text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
                   >
-                    + Add Shipping Address
+                    + Add Delivery Address
                   </button>
                 </div>
               ) : (
@@ -497,7 +497,7 @@ export default function Checkout() {
                       Guest Delivery Information
                     </h2>
                     <p className="text-xs text-gray-400">
-                      No account needed • Order details will be sent to your email
+                      No account required • Order confirmation and live tracking will be emailed to you
                     </p>
                   </div>
                 </div>
@@ -523,7 +523,7 @@ export default function Checkout() {
                         required
                         value={guestForm.guest_name}
                         onChange={(e) => setGuestForm({ ...guestForm, guest_name: e.target.value })}
-                        placeholder="e.g. Subhan Ul Haq"
+                        placeholder="e.g. Muhammad Ali"
                         className="w-full pl-10 pr-3.5 py-2.5 border border-gray-200 rounded-xl text-xs sm:text-sm bg-gray-50/50 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 transition"
                       />
                     </div>
@@ -546,7 +546,7 @@ export default function Checkout() {
                       />
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1">
-                      Tracking link & receipt will be sent here
+                      Order receipt & tracking link will be sent here
                     </p>
                   </div>
                 </div>
@@ -568,7 +568,7 @@ export default function Checkout() {
                     />
                   </div>
                   <p className="text-[10px] text-gray-400 mt-1">
-                    Courier rider will call you on this number before delivery
+                    Courier rider will call this number prior to doorstep delivery
                   </p>
                 </div>
 
@@ -636,7 +636,7 @@ export default function Checkout() {
                 <h2 className="text-lg font-extrabold text-charcoal leading-tight">
                   Payment Method
                 </h2>
-                <p className="text-xs text-gray-400">Pay safely upon receiving your package</p>
+                <p className="text-xs text-gray-400">Pay safely in cash when your order arrives at your doorstep</p>
               </div>
             </div>
 
@@ -650,7 +650,7 @@ export default function Checkout() {
                     Cash On Delivery (COD)
                   </h4>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Pay cash directly to the courier at your doorstep
+                    Pay cash directly to the courier rider upon delivery
                   </p>
                 </div>
               </div>
@@ -740,7 +740,7 @@ export default function Checkout() {
               </div>
               <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-primary-orange" />
-                <span>Instant dispatch across Pakistan</span>
+                <span>Fast nationwide delivery across Pakistan</span>
               </div>
             </div>
           </div>

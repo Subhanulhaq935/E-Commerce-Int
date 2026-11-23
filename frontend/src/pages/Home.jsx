@@ -73,14 +73,14 @@ export default function Home() {
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-1.5 rounded-full mb-3.5">
               <Sparkles className="w-3.5 h-3.5 text-primary-orange animate-spin-slow" />
               <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-orange-300">
-                Verified Season Collection 2026
+                Curated Collection 2026
               </span>
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
               Elevate Your Everyday <span className="text-primary-orange bg-clip-text text-transparent bg-gradient-to-r from-primary-orange to-amber-400">Lifestyle.</span>
             </h1>
             <p className="text-slate-300 mt-3 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl">
-              Shop curated, 100% original lifestyle essentials with zero hassle. Instant Cash on Delivery and verified buyer reviews on every item.
+              Shop verified lifestyle essentials with confidence. Enjoy free Cash on Delivery across Pakistan and authentic reviews from verified buyers.
             </p>
 
             {/* Hero Trust Pills */}
@@ -91,7 +91,7 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-1.5 bg-slate-850/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs text-slate-200 font-bold backdrop-blur-sm shadow-xs">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>100% Quality Guaranteed</span>
+                <span>100% Authentic Quality</span>
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function Home() {
             <span className="text-3xl font-black text-white">{products.length}+</span>
             <span className="text-xs text-slate-400 font-semibold mt-0.5">Verified Products</span>
             <span className="mt-3 text-[11px] font-extrabold text-primary-orange bg-primary-orange/15 border border-primary-orange/30 px-3 py-1 rounded-full">
-              In Stock & Ready
+              In Stock & Ready to Ship
             </span>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function Home() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search products by title or keywords..."
+            placeholder="Search products by name, category, or keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/20 text-sm font-medium transition-all"
@@ -146,7 +146,7 @@ export default function Home() {
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
-            All Items ({products.length})
+            All Products ({products.length})
           </button>
           {categories.map((cat) => {
             const count = products.filter((p) => p.category_id === cat.id).length
@@ -227,7 +227,7 @@ export default function Home() {
           </div>
           <h3 className="text-xl font-extrabold text-charcoal">No matching products found</h3>
           <p className="text-gray-500 text-sm mt-1.5 mb-6">
-            We couldn't find anything matching your current search or category filter.
+            We couldn't find any products matching your search or selected category. Try different keywords or clear your filters.
           </p>
           <button
             onClick={() => {
@@ -236,7 +236,7 @@ export default function Home() {
             }}
             className="bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-md shadow-orange-500/20 transition cursor-pointer"
           >
-            View All Products
+            Clear Filters
           </button>
         </div>
       ) : (
@@ -348,7 +348,7 @@ export default function Home() {
                       {p.name}
                     </Link>
                     <p className="text-slate-500 text-xs line-clamp-2 mt-1 leading-relaxed">
-                      {p.description || 'Premium quality verified product available with Cash on Delivery across Pakistan.'}
+                      {p.description || 'Premium quality product available with nationwide Cash on Delivery.'}
                     </p>
                   </div>
 

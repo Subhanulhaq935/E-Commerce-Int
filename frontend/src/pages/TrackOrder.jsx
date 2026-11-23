@@ -40,7 +40,7 @@ export default function TrackOrder() {
         console.error('Error tracking order:', err)
         setError(
           err.response?.data?.detail ||
-            'Unable to find this order. The tracking link may be invalid or expired.'
+            'Unable to locate this order. The tracking link may be incomplete or expired.'
         )
       } finally {
         setLoading(false)
@@ -68,13 +68,13 @@ export default function TrackOrder() {
           </div>
           <h2 className="text-2xl font-extrabold text-charcoal mb-2">Order Not Found</h2>
           <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-            {error || 'We could not locate an order matching this tracking link.'}
+            {error || 'We could not find an order matching this tracking link.'}
           </p>
           <Link
             to="/"
             className="bg-primary-orange hover:bg-primary-orange-hover text-white text-sm font-bold px-7 py-3 rounded-xl shadow-md inline-block transition"
           >
-            Return to Shop
+            Browse Catalog
           </Link>
         </div>
       </div>
@@ -83,10 +83,10 @@ export default function TrackOrder() {
 
   // Visual status timeline steps
   const steps = [
-    { key: 'pending', label: 'Order Placed', icon: Clock, desc: 'We received your order' },
-    { key: 'processing', label: 'Processing', icon: Package, desc: 'Being prepared & packed' },
+    { key: 'pending', label: 'Order Placed', icon: Clock, desc: 'Order received and confirmed' },
+    { key: 'processing', label: 'Processing', icon: Package, desc: 'Package being prepared' },
     { key: 'shipped', label: 'On The Way', icon: Truck, desc: 'Handed over to courier' },
-    { key: 'delivered', label: 'Delivered', icon: CheckCircle, desc: 'Successfully received' },
+    { key: 'delivered', label: 'Delivered', icon: CheckCircle, desc: 'Successfully delivered' },
   ]
 
   const statusOrder = ['pending', 'processing', 'shipped', 'delivered']
@@ -116,7 +116,7 @@ export default function TrackOrder() {
           to="/"
           className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-primary-orange transition"
         >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Return to Store
+          <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back to Catalog
         </Link>
         <span className="text-xs font-bold text-gray-400">
           Order ID: <strong className="text-charcoal font-black">#{order.id}</strong>

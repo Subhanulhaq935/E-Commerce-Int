@@ -25,7 +25,7 @@ export default function Login() {
         navigate('/')
       }
     } catch (err) {
-      const msg = formatApiError(err, 'Invalid email or password')
+      const msg = formatApiError(err, 'Invalid email or password. Please try again.')
       setError(msg)
     } finally {
       setLoading(false)
@@ -49,7 +49,7 @@ export default function Login() {
           </Link>
           <h2 className="text-2xl font-black text-slate-900">Welcome Back</h2>
           <p className="text-slate-500 text-sm mt-1">
-            Sign in to access your cart, orders, and verified reviews
+            Sign in to access your orders, saved addresses, and reviews
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export default function Login() {
 
         <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-primary-orange" />
-          <span>Protected by JWT Encrypted Authentication</span>
+          <span>Protected by secure encrypted authentication</span>
         </div>
       </div>
     </div>

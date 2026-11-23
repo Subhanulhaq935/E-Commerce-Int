@@ -48,15 +48,15 @@ export default function Cart() {
           <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto mb-4">
             <ShoppingBag className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-extrabold text-charcoal mb-2">Your Cart is Empty</h2>
+          <h2 className="text-2xl font-extrabold text-charcoal mb-2">Your Shopping Cart is Empty</h2>
           <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-            Looks like you haven't added any items yet. Explore our latest collection!
+            You haven't added any items to your cart yet. Discover our curated collection and start shopping!
           </p>
           <Link
             to="/"
             className="bg-primary-orange hover:bg-primary-orange-hover text-white font-bold px-7 py-3 rounded-xl shadow-md shadow-orange-500/20 inline-flex items-center gap-2 transition"
           >
-            <span>Start Shopping</span>
+            <span>Explore Products</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -70,7 +70,7 @@ export default function Cart() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <span className="text-xs font-extrabold uppercase tracking-wider text-primary-orange">
-            Order Bag
+            Order Items
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-charcoal">
             Shopping Cart ({items.length} {items.length === 1 ? 'Item' : 'Items'})
@@ -249,7 +249,7 @@ export default function Cart() {
               <div className="flex justify-between items-center">
                 <span>Delivery Charges</span>
                 <span className="text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs font-extrabold">
-                  FREE (COD)
+                  FREE (Cash on Delivery)
                 </span>
               </div>
             </div>
@@ -272,11 +272,11 @@ export default function Cart() {
             <div className="mt-5 pt-4 border-t border-gray-100 space-y-2 text-xs text-gray-500">
               <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-primary-orange flex-shrink-0" />
-                <span>Fast nationwide Cash on Delivery</span>
+                <span>Free Cash on Delivery across Pakistan</span>
               </div>
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-primary-orange flex-shrink-0" />
-                <span>100% secure checkout with stock lock</span>
+                <span>100% secure checkout with verified stock</span>
               </div>
             </div>
           </div>

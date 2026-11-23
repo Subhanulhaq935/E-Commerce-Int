@@ -209,9 +209,9 @@ export default function Navbar() {
               </div>
               <button
                 onClick={handleLogout}
-                className="text-xs font-bold text-red-400 hover:text-red-300 px-2.5 py-1.5 rounded-lg bg-red-500/10 flex items-center gap-1"
+                className="text-xs font-bold text-red-400 hover:text-red-300 px-2.5 py-1.5 rounded-lg bg-red-500/10 flex items-center gap-1 cursor-pointer"
               >
-                <LogOut className="w-3.5 h-3.5" /> Logout
+                <LogOut className="w-3.5 h-3.5" /> Sign Out
               </button>
             </div>
           ) : (
@@ -241,7 +241,7 @@ export default function Navbar() {
                 isActive('/') ? 'bg-primary-orange/15 text-primary-orange' : 'text-slate-200 hover:bg-slate-800'
               }`}
             >
-              <span>Catalog & Products</span>
+              <span>Browse Catalog</span>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </Link>
 
@@ -273,7 +273,7 @@ export default function Navbar() {
                   isActive('/my-orders') ? 'bg-primary-orange/15 text-primary-orange' : 'text-slate-200 hover:bg-slate-800'
                 }`}
               >
-                <span>My Orders & Tracking</span>
+                <span>My Orders</span>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
               </Link>
             )}
@@ -286,7 +286,7 @@ export default function Navbar() {
                   isActive('/admin') ? 'bg-primary-orange text-white' : 'bg-slate-800 text-primary-orange'
                 }`}
               >
-                <span>Admin Management Panel</span>
+                <span>Admin Dashboard</span>
                 <ChevronRight className="w-4 h-4" />
               </Link>
             )}

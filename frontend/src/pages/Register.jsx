@@ -36,7 +36,7 @@ export default function Register() {
       await login(email, password)
       navigate('/')
     } catch (err) {
-      const msg = formatApiError(err, 'Registration failed. Please check your inputs.')
+      const msg = formatApiError(err, 'Registration failed. Please review your details and try again.')
       setError(msg)
     } finally {
       setLoading(false)
@@ -60,7 +60,7 @@ export default function Register() {
           </Link>
           <h2 className="text-2xl font-black text-slate-900">Create an Account</h2>
           <p className="text-slate-500 text-sm mt-1">
-            Join E-Shop.pk for fast checkout and order tracking
+            Create your account for faster checkout, order tracking, and exclusive updates
           </p>
         </div>
 
@@ -145,7 +145,7 @@ export default function Register() {
               </button>
             </div>
             <p className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-              Must be at least 8 characters with 1 uppercase (A-Z), 1 lowercase (a-z), 1 number (0-9) & 1 special symbol (@$!%*?&#).
+              Must be at least 8 characters with uppercase, lowercase, numbers, and symbols (@$!%*?&#).
             </p>
           </div>
 
@@ -168,7 +168,7 @@ export default function Register() {
 
         <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-gray-400 font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-primary-orange" />
-          <span>Instant Buyer Account Activation</span>
+          <span>Instant Account Activation</span>
         </div>
       </div>
     </div>

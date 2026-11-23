@@ -136,7 +136,7 @@ export default function AdminDashboard() {
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
-      notifySuccess(`Order #${orderId} moved to ${newStatus}`)
+      notifySuccess(`Order #${orderId} status updated to ${newStatus}`)
       const res = await api.get('/admin/orders')
       setOrders(res.data)
     } catch (err) {
@@ -145,10 +145,10 @@ export default function AdminDashboard() {
   }
 
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm(`Are you sure you want to cancel order #${orderId}? Stock will be restored to inventory.`)) return
+    if (!window.confirm(`Are you sure you want to cancel Order #${orderId}? Reserved items will be restored to inventory.`)) return
     try {
       await api.patch(`/admin/orders/${orderId}/cancel`)
-      notifySuccess(`Order #${orderId} cancelled and stock restored!`)
+      notifySuccess(`Order #${orderId} cancelled and stock restored.`)
       const res = await api.get('/admin/orders')
       setOrders(res.data)
     } catch (err) {
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
       }
 
       if (salePriceNum !== null && salePriceNum >= priceNum) {
-        notifyError('Sale price must be strictly lower than normal price.')
+        notifyError('Sale price must be lower than the regular price.')
         return
       }
 
@@ -289,11 +289,11 @@ export default function AdminDashboard() {
   }
 
   const handleDeleteProduct = async (productId) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return
+    if (!window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) return
     try {
       await api.delete(`/products/${productId}`)
       setCachedProducts(null)
-      notifySuccess('Product deleted successfully')
+      notifySuccess('Product deleted successfully.')
       const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
       }
 
       if (salePriceNum !== null && salePriceNum >= priceNum) {
-        notifyError('Sale price must be strictly lower than normal price.')
+        notifyError('Sale price must be lower than the regular price.')
         return
       }
 
@@ -391,18 +391,18 @@ export default function AdminDashboard() {
     }
   }
 
-  // --- Delete Product Picture ---
+  // --- Delete Product Image ---
   const handleDeleteProductImage = async (imageId) => {
-    if (!window.confirm('Are you sure you want to delete this picture?')) return
+    if (!window.confirm('Are you sure you want to delete this image?')) return
     setDeletingImageId(imageId)
     try {
       await api.delete(`/product-images/${imageId}`)
       setCachedProducts(null)
-      notifySuccess('Picture deleted successfully!')
+      notifySuccess('Image deleted successfully!')
       const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
-      notifyError(err.response?.data?.detail || 'Failed to delete picture')
+      notifyError(err.response?.data?.detail || 'Failed to delete image')
     } finally {
       setDeletingImageId(null)
     }

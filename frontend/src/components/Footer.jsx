@@ -50,20 +50,20 @@ export default function Footer() {
               E-Shop<span className="text-primary-orange">.pk</span>
             </span>
             <p className="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed">
-              Your premier destination for verified lifestyle, fashion, and electronics with instant doorstep delivery.
+              Your trusted online store for verified lifestyle, fashion, and electronics with fast doorstep delivery across Pakistan.
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-bold text-slate-300">
           <Link to="/" className="hover:text-primary-orange transition-colors">
-            Products Catalog
+            Catalog
           </Link>
           <Link to="/cart" className="hover:text-primary-orange transition-colors">
             Shopping Cart
           </Link>
           <Link to="/my-orders" className="hover:text-primary-orange transition-colors">
-            Order Status
+            Track Order
           </Link>
           <Link to="/login" className="hover:text-primary-orange transition-colors">
             My Account
