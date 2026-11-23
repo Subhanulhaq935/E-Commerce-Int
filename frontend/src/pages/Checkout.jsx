@@ -167,9 +167,6 @@ export default function Checkout() {
         })
         clearCartState()
         setOrderSuccess(res.data)
-        setTimeout(() => {
-          navigate('/my-orders')
-        }, 3000)
       } else {
         // --- 2. Guest Customer Flow ---
         const name = guestForm.guest_name.trim()
@@ -292,13 +289,23 @@ export default function Checkout() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <Link
-              to={trackingUrl}
-              className="flex-1 bg-primary-orange hover:bg-primary-orange-hover text-white font-bold py-3.5 rounded-xl transition text-sm text-center shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5"
-            >
-              <span>Track Your Order Now</span>
-              <ExternalLink className="w-4 h-4" />
-            </Link>
+            {isGuestOrder ? (
+              <Link
+                to={trackingUrl}
+                className="flex-1 bg-primary-orange hover:bg-primary-orange-hover text-white font-bold py-3.5 rounded-xl transition text-sm text-center shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5"
+              >
+                <span>Track Your Order Now</span>
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                to="/my-orders"
+                className="flex-1 bg-primary-orange hover:bg-primary-orange-hover text-white font-bold py-3.5 rounded-xl transition text-sm text-center shadow-md shadow-orange-500/20 flex items-center justify-center gap-1.5"
+              >
+                <span>View in My Orders</span>
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+            )}
             <Link
               to="/"
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-charcoal font-bold py-3.5 rounded-xl transition text-sm text-center"

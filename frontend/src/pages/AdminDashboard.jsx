@@ -28,7 +28,7 @@ import {
 } from 'lucide-react'
 
 export default function AdminDashboard() {
-  const { user, isAdmin } = useAuth()
+  const { user, isAdmin, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState('orders') // 'orders', 'products', 'out_of_stock', 'users'
@@ -90,6 +90,7 @@ export default function AdminDashboard() {
 
   // Auth Guard
   useEffect(() => {
+    if (authLoading && !user) return
     if (!user) {
       navigate('/login')
       return
@@ -99,7 +100,7 @@ export default function AdminDashboard() {
       return
     }
     fetchDashboardData()
-  }, [user, isAdmin])
+  }, [user, isAdmin, authLoading])
 
   const fetchDashboardData = async () => {
     try {
@@ -132,26 +133,54 @@ export default function AdminDashboard() {
     setTimeout(() => setError(''), 3000)
   }
 
-  // --- Order Status Transitions ---
+  // --- Order Status Transitions (Instant Optimistic UI) ---
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    const previousOrders = orders
+    // 1. Instant optimistic update in local state (0ms UI reaction)
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
+    )
+    notifySuccess(`Order #${orderId} status updated to ${newStatus}`)
+
     try {
-      await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
-      notifySuccess(`Order #${orderId} status updated to ${newStatus}`)
-      const res = await api.get('/admin/orders')
-      setOrders(res.data)
+      // 2. Perform backend update silently in background
+      const res = await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
+      if (res.data) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, ...res.data } : o))
+        )
+      }
     } catch (err) {
+      // 3. Rollback on failure
+      setOrders(previousOrders)
       notifyError(err.response?.data?.detail || 'Failed to update order status')
     }
   }
 
   const handleCancelOrder = async (orderId) => {
-    if (!window.confirm(`Are you sure you want to cancel Order #${orderId}? Reserved items will be restored to inventory.`)) return
+    if (
+      !window.confirm(
+        `Are you sure you want to cancel Order #${orderId}? Reserved items will be restored to inventory.`
+      )
+    )
+      return
+
+    const previousOrders = orders
+    // Instant optimistic update (0ms UI reaction)
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: 'cancelled' } : o))
+    )
+    notifySuccess(`Order #${orderId} cancelled and stock restored.`)
+
     try {
-      await api.patch(`/admin/orders/${orderId}/cancel`)
-      notifySuccess(`Order #${orderId} cancelled and stock restored.`)
-      const res = await api.get('/admin/orders')
-      setOrders(res.data)
+      const res = await api.patch(`/admin/orders/${orderId}/cancel`)
+      if (res.data) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, ...res.data } : o))
+        )
+      }
     } catch (err) {
+      setOrders(previousOrders)
       notifyError(err.response?.data?.detail || 'Failed to cancel order')
     }
   }
