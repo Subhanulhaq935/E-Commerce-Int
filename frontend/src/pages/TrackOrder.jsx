@@ -140,16 +140,16 @@ export default function TrackOrder() {
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <span
-              className={`text-xs font-extrabold uppercase px-3.5 py-1.5 rounded-full border ${
+              className={`text-xs font-black uppercase px-3.5 py-1.5 rounded-full border shadow-2xs ${
                 order.status === 'delivered'
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                   : order.status === 'cancelled'
-                  ? 'bg-red-50 text-red-600 border-red-200'
+                  ? 'bg-rose-50 text-rose-600 border-rose-200'
                   : order.status === 'shipped'
                   ? 'bg-purple-50 text-purple-700 border-purple-200'
                   : order.status === 'processing'
                   ? 'bg-blue-50 text-blue-700 border-blue-200'
-                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
               }`}
             >
               {order.status === 'pending' ? 'Pending Dispatch' : order.status}
@@ -159,20 +159,20 @@ export default function TrackOrder() {
 
         {/* Visual Progress Timeline */}
         {isCancelled ? (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-700 text-xs sm:text-sm font-bold">
-            <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-600" />
+          <div className="mt-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-3 text-rose-700 text-xs sm:text-sm font-bold">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-600" />
             <span>This order was cancelled. Any reserved stock has been returned to inventory.</span>
           </div>
         ) : (
           <div className="mt-8">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-6">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-6">
               Delivery Progress
             </h3>
             <div className="relative">
               {/* Connecting progress line */}
-              <div className="hidden sm:block absolute top-5 left-8 right-8 h-1 bg-gray-200 -z-0">
+              <div className="hidden sm:block absolute top-5.5 left-10 right-10 h-1 bg-slate-200 -z-0">
                 <div
-                  className="h-full bg-primary-orange transition-all duration-500"
+                  className="h-full bg-primary-orange transition-all duration-500 rounded-full"
                   style={{
                     width: `${Math.max(0, (currentStepIndex / (steps.length - 1)) * 100)}%`,
                   }}
@@ -191,22 +191,22 @@ export default function TrackOrder() {
                       className="flex flex-col items-center text-center p-2 rounded-2xl transition"
                     >
                       <div
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-2.5 transition-all shadow-sm ${
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-2.5 transition-all shadow-xs ${
                           isDone
                             ? 'bg-primary-orange text-white ring-4 ring-orange-100 shadow-orange-500/25'
-                            : 'bg-gray-100 text-gray-400 border border-gray-200'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200'
                         }`}
                       >
                         <StepIcon className="w-5 h-5" />
                       </div>
                       <span
-                        className={`text-xs font-extrabold block ${
-                          isDone ? 'text-charcoal' : 'text-gray-400'
+                        className={`text-xs font-black block ${
+                          isDone ? 'text-slate-900' : 'text-slate-400'
                         }`}
                       >
                         {st.label}
                       </span>
-                      <span className="text-[11px] text-gray-400 hidden sm:block mt-0.5">
+                      <span className="text-[11px] text-slate-500 hidden sm:block mt-0.5 font-medium">
                         {st.desc}
                       </span>
                     </div>
@@ -222,37 +222,37 @@ export default function TrackOrder() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Ordered Items List */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-6 sm:p-7">
-            <h3 className="text-base font-extrabold text-charcoal mb-4 flex items-center gap-2">
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-7">
+            <h3 className="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-primary-orange" />
               <span>Ordered Products ({order.items?.length || 0})</span>
             </h3>
 
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-slate-100">
               {order.items?.map((it) => (
                 <div key={it.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
                   <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-14 h-14 bg-gray-100 rounded-2xl overflow-hidden border border-gray-200/70 flex items-center justify-center flex-shrink-0">
-                      <ShoppingBag className="w-6 h-6 text-gray-300" />
+                    <div className="w-14 h-14 bg-slate-50 rounded-2xl overflow-hidden border border-slate-200/70 flex items-center justify-center flex-shrink-0">
+                      <ShoppingBag className="w-6 h-6 text-slate-300" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-extrabold text-charcoal text-sm truncate">
+                        <h4 className="font-extrabold text-slate-900 text-sm truncate">
                           {it.product_name}
                         </h4>
                         {it.size && (
-                          <span className="text-[10px] font-extrabold bg-orange-50 text-primary-orange px-2 py-0.5 rounded-full border border-orange-200">
+                          <span className="text-[10px] font-black bg-orange-50 text-primary-orange px-2 py-0.5 rounded-full border border-orange-200">
                             Size: {it.size}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Rs. {Number(it.unit_price).toLocaleString()} × <strong className="text-charcoal">{it.quantity}</strong>
+                      <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                        Rs. {Number(it.unit_price).toLocaleString()} × <strong className="text-slate-900">{it.quantity}</strong>
                       </p>
                     </div>
                   </div>
 
-                  <span className="font-extrabold text-charcoal text-sm sm:text-base whitespace-nowrap">
+                  <span className="font-black text-slate-900 text-sm sm:text-base whitespace-nowrap">
                     Rs. {Number(it.subtotal).toLocaleString()}
                   </span>
                 </div>

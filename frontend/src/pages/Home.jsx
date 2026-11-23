@@ -63,69 +63,69 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Modern Hero Banner */}
-      <div className="relative bg-charcoal text-white rounded-3xl p-8 md:p-12 mb-10 shadow-xl overflow-hidden border border-gray-800">
+      <div className="relative bg-gradient-to-br from-slate-950 via-charcoal to-slate-900 text-white rounded-3xl p-6 sm:p-8 md:p-12 mb-8 md:mb-10 shadow-2xl overflow-hidden border border-slate-800">
         {/* Decorative Radial Glows */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary-orange/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-orange-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/15 px-3.5 py-1.5 rounded-full mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-primary-orange" />
-              <span className="text-xs font-bold uppercase tracking-wider text-orange-300">
-                New Season Collection 2026
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-1.5 rounded-full mb-3.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary-orange animate-spin-slow" />
+              <span className="text-[11px] sm:text-xs font-extrabold uppercase tracking-wider text-orange-300">
+                Verified Season Collection 2026
               </span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-              Elevate Your Everyday <span className="text-primary-orange">Lifestyle.</span>
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight">
+              Elevate Your Everyday <span className="text-primary-orange bg-clip-text text-transparent bg-gradient-to-r from-primary-orange to-amber-400">Lifestyle.</span>
             </h1>
-            <p className="text-gray-300 mt-3 text-sm md:text-base leading-relaxed max-w-xl">
-              Shop curated, 100% original products with zero hassle. Enjoy instant Cash on Delivery and verified customer reviews on every item.
+            <p className="text-slate-300 mt-3 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl">
+              Shop curated, 100% original lifestyle essentials with zero hassle. Instant Cash on Delivery and verified buyer reviews on every item.
             </p>
 
             {/* Hero Trust Pills */}
-            <div className="flex flex-wrap items-center gap-3 mt-6">
-              <div className="flex items-center gap-1.5 bg-gray-800/90 border border-gray-700 px-3 py-1.5 rounded-xl text-xs text-gray-200 font-medium">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mt-5 sm:mt-6">
+              <div className="flex items-center gap-1.5 bg-slate-850/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs text-slate-200 font-bold backdrop-blur-sm shadow-xs">
                 <Truck className="w-4 h-4 text-primary-orange" />
                 <span>Free Cash on Delivery</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-gray-800/90 border border-gray-700 px-3 py-1.5 rounded-xl text-xs text-gray-200 font-medium">
-                <ShieldCheck className="w-4 h-4 text-primary-orange" />
-                <span>Quality Guaranteed</span>
+              <div className="flex items-center gap-1.5 bg-slate-850/90 border border-slate-700/80 px-3 py-1.5 rounded-xl text-xs text-slate-200 font-bold backdrop-blur-sm shadow-xs">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>100% Quality Guaranteed</span>
               </div>
             </div>
           </div>
 
           {/* Right Highlight Card */}
-          <div className="hidden lg:flex flex-col items-center justify-center bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 min-w-[210px] text-center">
-            <div className="w-12 h-12 rounded-2xl bg-primary-orange/20 border border-primary-orange/40 flex items-center justify-center mb-3">
-              <ShoppingBag className="w-6 h-6 text-primary-orange" />
+          <div className="hidden lg:flex flex-col items-center justify-center bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 min-w-[210px] text-center shadow-lg">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-orange to-orange-600 flex items-center justify-center mb-3 shadow-md shadow-orange-500/30">
+              <ShoppingBag className="w-6 h-6 text-white" />
             </div>
             <span className="text-3xl font-black text-white">{products.length}+</span>
-            <span className="text-xs text-gray-400 font-medium mt-0.5">Curated Products</span>
-            <span className="mt-3 text-[11px] font-bold text-primary-orange bg-primary-orange/15 px-3 py-1 rounded-full">
-              Ready to Dispatch
+            <span className="text-xs text-slate-400 font-semibold mt-0.5">Verified Products</span>
+            <span className="mt-3 text-[11px] font-extrabold text-primary-orange bg-primary-orange/15 border border-primary-orange/30 px-3 py-1 rounded-full">
+              In Stock & Ready
             </span>
           </div>
         </div>
       </div>
 
       {/* Filter & Search Toolbar */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 sm:p-5 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
         {/* Search Input */}
         <div className="relative w-full lg:w-96">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search products by name or keyword..."
+            placeholder="Search products by title or keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 bg-gray-50/60 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 text-sm transition-all"
+            className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/20 text-sm font-medium transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-charcoal cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-charcoal cursor-pointer p-0.5 rounded-md hover:bg-slate-100"
               title="Clear search"
             >
               <X className="w-4 h-4" />
@@ -134,33 +134,39 @@ export default function Home() {
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1 hidden sm:inline-flex items-center gap-1">
-            <SlidersHorizontal className="w-3.5 h-3.5" /> Filter:
+        <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0 scrollbar-none">
+          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline-flex items-center gap-1">
+            <SlidersHorizontal className="w-3.5 h-3.5" /> Category:
           </span>
           <button
             onClick={() => setSelectedCategory('')}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
               selectedCategory === ''
                 ? 'bg-primary-orange text-white shadow-md shadow-orange-500/25'
-                : 'bg-gray-100/80 text-gray-600 hover:bg-gray-200/70 hover:text-charcoal'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
-            All Items
+            All Items ({products.length})
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(String(cat.id))}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
-                selectedCategory === String(cat.id)
-                  ? 'bg-primary-orange text-white shadow-md shadow-orange-500/25'
-                  : 'bg-gray-100/80 text-gray-600 hover:bg-gray-200/70 hover:text-charcoal'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const count = products.filter((p) => p.category_id === cat.id).length
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(String(cat.id))}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  selectedCategory === String(cat.id)
+                    ? 'bg-primary-orange text-white shadow-md shadow-orange-500/25'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <span>{cat.name}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedCategory === String(cat.id) ? 'bg-white/25 text-white' : 'bg-slate-200/80 text-slate-500'}`}>
+                  {count}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -243,37 +249,37 @@ export default function Home() {
             return (
               <div
                 key={p.id}
-                className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col group"
+                className="bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 overflow-hidden flex flex-col group"
               >
                 {/* Product Image Container */}
                 <Link
                   to={`/products/${p.id}`}
                   state={{ product: p }}
-                  className="h-52 bg-gradient-to-b from-gray-50 to-gray-100/70 relative overflow-hidden flex items-center justify-center block"
+                  className="h-56 bg-gradient-to-b from-slate-50 to-slate-100/80 relative overflow-hidden flex items-center justify-center block"
                 >
                   {/* Floating Category & Stock Badges */}
                   <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
                     <div className="flex items-center gap-1.5">
                       {catName && (
-                        <span className="bg-charcoal/85 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                        <span className="bg-slate-900/85 backdrop-blur-md text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-xs">
                           {catName}
                         </span>
                       )}
                       {p.has_sizes && (
-                        <span className="bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
-                          Sizes
+                        <span className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
+                          Sizes S-L
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       {p.sale_price && Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price) && (
-                        <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                        <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-md">
                           -{Math.round(((Number(p.price) - Number(p.sale_price)) / Number(p.price)) * 100)}%
                         </span>
                       )}
                       {p.stock > 0 && p.stock <= 5 && (
-                        <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-sm">
+                        <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-xs">
                           Only {p.stock} left
                         </span>
                       )}
@@ -295,14 +301,14 @@ export default function Home() {
                   )}
                   <div
                     style={{ display: imgUrl ? 'none' : 'flex' }}
-                    className="w-full h-full items-center justify-center bg-gray-50"
+                    className="w-full h-full items-center justify-center bg-slate-50"
                   >
-                    <ShoppingBag className="w-12 h-12 text-gray-300 group-hover:scale-110 transition-transform" />
+                    <ShoppingBag className="w-12 h-12 text-slate-300 group-hover:scale-110 transition-transform" />
                   </div>
 
                   {p.stock <= 0 && (
-                    <div className="absolute inset-0 bg-charcoal/70 backdrop-blur-[2px] flex items-center justify-center">
-                      <span className="text-white text-xs font-extrabold uppercase tracking-wider bg-red-600 px-3.5 py-1.5 rounded-full shadow-lg">
+                    <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] flex items-center justify-center">
+                      <span className="text-white text-xs font-black uppercase tracking-wider bg-red-600 px-4 py-1.5 rounded-full shadow-xl">
                         Out of Stock
                       </span>
                     </div>
@@ -314,48 +320,48 @@ export default function Home() {
                   <div>
                     {/* Rating & Stock Row */}
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-lg">
+                      <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-lg shadow-2xs">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                        <span className="text-xs font-extrabold text-amber-900">
+                        <span className="text-xs font-black text-amber-950">
                           {p.average_rating ? p.average_rating.toFixed(1) : 'New'}
                         </span>
-                        <span className="text-[11px] text-amber-700/80">
+                        <span className="text-[11px] text-amber-800/80 font-medium">
                           ({p.review_count || 0})
                         </span>
                       </div>
 
                       {p.stock > 0 ? (
-                        <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                        <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           In Stock
                         </span>
                       ) : (
-                        <span className="text-[11px] font-semibold text-red-500">Sold Out</span>
+                        <span className="text-[11px] font-bold text-rose-500">Sold Out</span>
                       )}
                     </div>
 
                     <Link
                       to={`/products/${p.id}`}
                       state={{ product: p }}
-                      className="font-bold text-charcoal text-base line-clamp-1 group-hover:text-primary-orange transition-colors"
+                      className="font-extrabold text-slate-900 text-base line-clamp-1 group-hover:text-primary-orange transition-colors"
                     >
                       {p.name}
                     </Link>
-                    <p className="text-gray-500 text-xs line-clamp-2 mt-1 leading-relaxed">
-                      {p.description || 'Premium quality product available with Cash on Delivery.'}
+                    <p className="text-slate-500 text-xs line-clamp-2 mt-1 leading-relaxed">
+                      {p.description || 'Premium quality verified product available with Cash on Delivery across Pakistan.'}
                     </p>
                   </div>
 
                   {/* Price & Action CTA */}
-                  <div className="mt-5 pt-3.5 border-t border-gray-100 flex items-center justify-between gap-2">
+                  <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
                     <div>
                       {p.sale_price && Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price) ? (
                         <>
                           <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200/50">
                               Sale
                             </span>
-                            <span className="text-xs text-gray-400 line-through font-semibold">
+                            <span className="text-xs text-slate-400 line-through font-bold">
                               Rs. {Number(p.price).toLocaleString()}
                             </span>
                           </div>
@@ -365,10 +371,10 @@ export default function Home() {
                         </>
                       ) : (
                         <>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
                             Price
                           </span>
-                          <span className="text-lg font-extrabold text-charcoal">
+                          <span className="text-lg font-black text-slate-900">
                             Rs. {Number(p.price).toLocaleString()}
                           </span>
                         </>
@@ -377,14 +383,14 @@ export default function Home() {
                     <Link
                       to={`/products/${p.id}`}
                       state={{ product: p }}
-                      className={`text-xs font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm ${
+                      className={`text-xs font-extrabold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-xs ${
                         p.stock > 0
                           ? 'bg-primary-orange hover:bg-primary-orange-hover text-white shadow-orange-500/20 hover:shadow-md hover:shadow-orange-500/30'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                       }`}
                     >
                       <span>{p.stock > 0 ? 'View Details' : 'Details'}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </div>
                 </div>

@@ -282,35 +282,35 @@ export default function ProductDetail() {
     : product.stock || 0
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
       {/* Breadcrumb Navigation */}
       <div className="flex items-center justify-between mb-6">
-        <nav className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-500">
+        <nav className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-500 overflow-x-auto py-1">
           <Link to="/" className="hover:text-primary-orange transition-colors">
             Shop
           </Link>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-500">{categoryName || 'Catalog'}</span>
-          <ChevronRight className="w-4 h-4 text-gray-400" />
-          <span className="text-charcoal font-bold truncate max-w-[180px] sm:max-w-xs">
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          <span className="text-slate-500 whitespace-nowrap">{categoryName || 'Catalog'}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          <span className="text-slate-900 font-extrabold truncate max-w-[140px] sm:max-w-xs">
             {product.name}
           </span>
         </nav>
 
         <Link
           to="/"
-          className="inline-flex items-center text-xs sm:text-sm font-bold text-gray-600 hover:text-primary-orange transition bg-white px-3.5 py-1.5 rounded-xl border border-gray-200 shadow-xs"
+          className="inline-flex items-center text-xs sm:text-sm font-bold text-slate-700 hover:text-primary-orange transition bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs hover:shadow-xs"
         >
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          Back
+          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+          Back to Shop
         </Link>
       </div>
 
       {/* Main Product Showcase Box */}
-      <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-6 sm:p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mb-12">
-        {/* Images Column (7 cols on lg) */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5 sm:p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 mb-12">
+        {/* Images Column (6 cols on lg) */}
         <div className="lg:col-span-6 flex flex-col">
-          <div className="w-full h-80 sm:h-96 lg:h-[420px] bg-gradient-to-b from-gray-50 to-gray-100/60 rounded-2xl overflow-hidden flex items-center justify-center border border-gray-200/60 mb-4 relative group">
+          <div className="w-full h-80 sm:h-96 lg:h-[440px] bg-gradient-to-b from-slate-50 to-slate-100/80 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-200/70 mb-4 relative group">
             {selectedImage && !imageError ? (
               <img
                 src={resolveImageUrl(selectedImage)}
@@ -319,16 +319,16 @@ export default function ProductDetail() {
                 className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
-              <div className="flex flex-col items-center text-gray-300">
-                <ShoppingBag className="w-24 h-24 mb-2 stroke-[1.5]" />
-                <span className="text-xs font-medium text-gray-400">Product Preview</span>
+              <div className="flex flex-col items-center text-slate-300">
+                <ShoppingBag className="w-20 h-20 mb-2 stroke-[1.5]" />
+                <span className="text-xs font-semibold text-slate-400">Product Preview</span>
               </div>
             )}
           </div>
 
           {/* Thumbnails */}
           {product.images && product.images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-1">
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
               {product.images.map((img) => (
                 <button
                   key={img.id}
@@ -336,10 +336,10 @@ export default function ProductDetail() {
                     setSelectedImage(img.image_url)
                     setImageError(false)
                   }}
-                  className={`w-18 h-18 rounded-xl border-2 overflow-hidden flex-shrink-0 cursor-pointer transition-all bg-gray-50 ${
+                  className={`w-18 h-18 rounded-xl border-2 overflow-hidden flex-shrink-0 cursor-pointer transition-all bg-slate-50 ${
                     selectedImage === img.image_url
                       ? 'border-primary-orange ring-4 ring-orange-500/15 scale-105'
-                      : 'border-gray-200 hover:border-gray-300 opacity-80 hover:opacity-100'
+                      : 'border-slate-200 hover:border-slate-300 opacity-80 hover:opacity-100'
                   }`}
                 >
                   <img
@@ -360,61 +360,61 @@ export default function ProductDetail() {
         <div className="lg:col-span-6 flex flex-col justify-between">
           <div>
             {/* Badges Row */}
-            <div className="flex flex-wrap items-center gap-2.5 mb-3">
-              <span className="text-xs font-extrabold uppercase tracking-wider px-3 py-1 bg-orange-50 text-primary-orange border border-orange-200/60 rounded-full">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 bg-orange-50 text-primary-orange border border-orange-200/60 rounded-full">
                 {categoryName || 'Store Item'}
               </span>
               {product.stock > 0 ? (
-                <span className="text-xs font-bold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
+                <span className="text-[11px] font-bold px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   In Stock ({product.stock} available)
                 </span>
               ) : (
-                <span className="text-xs font-bold px-3 py-1 bg-red-50 text-red-600 border border-red-200 rounded-full">
+                <span className="text-[11px] font-bold px-3 py-1 bg-rose-50 text-rose-600 border border-rose-200 rounded-full">
                   Out of Stock
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-charcoal tracking-tight leading-snug">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-snug">
               {product.name}
             </h1>
 
             {/* Ratings Summary Bar */}
             <div className="flex items-center gap-3 mt-3">
-              <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/70 px-2.5 py-1 rounded-xl">
+              <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/70 px-2.5 py-1 rounded-xl shadow-2xs">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Star
                     key={s}
                     className={`w-4 h-4 ${
                       s <= Math.round(product.average_rating || 0)
                         ? 'fill-amber-400 text-amber-400'
-                        : 'text-gray-300'
+                        : 'text-slate-300'
                     }`}
                   />
                 ))}
-                <span className="text-xs font-extrabold ml-1.5 text-amber-900">
+                <span className="text-xs font-black ml-1.5 text-amber-950">
                   {product.average_rating ? product.average_rating.toFixed(1) : 'New'}
                 </span>
               </div>
-              <span className="text-xs sm:text-sm font-medium text-gray-500">
+              <span className="text-xs sm:text-sm font-semibold text-slate-500">
                 {product.review_count || 0} Verified {product.review_count === 1 ? 'Review' : 'Reviews'}
               </span>
             </div>
 
             {/* Price Card */}
-            <div className="mt-6 p-5 bg-gray-50/90 border border-gray-200/70 rounded-2xl flex items-baseline justify-between">
+            <div className="mt-6 p-5 bg-slate-50/90 border border-slate-200/80 rounded-2xl flex items-baseline justify-between shadow-2xs">
               <div>
                 {isSaleActive ? (
                   <>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[11px] text-gray-400 uppercase tracking-wider font-bold">
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">
                         Normal:
                       </span>
-                      <span className="text-sm sm:text-base font-bold text-gray-400 line-through">
+                      <span className="text-sm sm:text-base font-bold text-slate-400 line-through">
                         Rs. {activeNormalPrice.toLocaleString()}
                       </span>
-                      <span className="text-xs font-black text-red-600 bg-red-100/90 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-black text-rose-700 bg-rose-100/90 px-2.5 py-0.5 rounded-full border border-rose-200/60">
                         -{Math.round(((activeNormalPrice - activeSalePrice) / activeNormalPrice) * 100)}% OFF
                       </span>
                     </div>
@@ -424,34 +424,34 @@ export default function ProductDetail() {
                   </>
                 ) : (
                   <>
-                    <span className="text-[11px] text-gray-400 block uppercase tracking-wider font-bold">
+                    <span className="text-[10px] text-slate-400 block uppercase tracking-wider font-extrabold">
                       {selectedSize ? `Price for Size ${selectedSize}` : 'Special Store Price'}
                     </span>
-                    <span className="text-3xl sm:text-4xl font-black text-charcoal tracking-tight mt-0.5 block">
+                    <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mt-0.5 block">
                       Rs. {activeNormalPrice.toLocaleString()}
                     </span>
                   </>
                 )}
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
+              <span className="text-xs font-extrabold text-emerald-800 bg-emerald-100/90 border border-emerald-200/60 px-3 py-1 rounded-xl">
                 Free Delivery
               </span>
             </div>
 
             {/* Optional Size Variant Selector */}
             {product.has_sizes && product.sizes && product.sizes.length > 0 && (
-              <div className="mt-5 p-4 bg-orange-50/40 border border-orange-200/70 rounded-2xl">
+              <div className="mt-5 p-4.5 bg-orange-50/40 border border-orange-200/70 rounded-2xl">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-charcoal flex items-center gap-1.5">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                     <span>Select Size</span>
                     <span className="text-red-500">*</span>
                   </label>
                   {selectedSize ? (
                     <span className="text-xs font-bold text-primary-orange">
-                      Chosen: <strong className="text-charcoal underline">{selectedSize}</strong>
+                      Selected: <strong className="text-slate-900 underline">{selectedSize}</strong>
                     </span>
                   ) : (
-                    <span className="text-[11px] text-amber-700 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] text-amber-800 font-bold bg-amber-100/80 px-2.5 py-0.5 rounded-full">
                       Required
                     </span>
                   )}
@@ -474,16 +474,16 @@ export default function ProductDetail() {
                         }}
                         className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-2.5 cursor-pointer ${
                           isOutOfStock
-                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
                             : isSelected
                               ? 'bg-charcoal text-white border-charcoal shadow-md shadow-charcoal/20 ring-2 ring-primary-orange scale-105'
-                              : 'bg-white text-gray-700 border-gray-200 hover:border-primary-orange hover:text-primary-orange hover:bg-orange-50/30'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-primary-orange hover:text-primary-orange hover:bg-orange-50/30'
                         }`}
                       >
                         <span className="font-black text-sm">{s.size}</span>
                         {sizeEffectivePrice && (
                           <span
-                            className={`text-[11px] font-bold ${
+                            className={`text-[11px] font-extrabold ${
                               isSelected ? 'text-orange-300' : 'text-primary-orange'
                             }`}
                           >
@@ -491,11 +491,11 @@ export default function ProductDetail() {
                           </span>
                         )}
                         {isOutOfStock ? (
-                          <span className="text-[10px] text-red-500 font-bold">(Sold Out)</span>
+                          <span className="text-[10px] text-rose-500 font-bold">(Sold Out)</span>
                         ) : (
                           <span
                             className={`text-[10px] ${
-                              isSelected ? 'text-gray-300' : 'text-gray-400'
+                              isSelected ? 'text-slate-300' : 'text-slate-400'
                             }`}
                           >
                             ({s.stock} left)
@@ -510,27 +510,27 @@ export default function ProductDetail() {
 
             {/* Description */}
             <div className="py-5 my-2">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-gray-400 mb-2">
-                Product Overview
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">
+                Product Details
               </h3>
-              <p className="text-gray-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                {product.description || 'No detailed description available for this item.'}
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                {product.description || 'Premium quality verified item available with fast Cash on Delivery across Pakistan.'}
               </p>
             </div>
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-3 my-4 text-xs text-gray-700">
-              <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-gray-50/80 border border-gray-200/60 rounded-xl text-center sm:text-left">
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 my-4 text-xs text-slate-700">
+              <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl text-center sm:text-left">
                 <Truck className="w-5 h-5 text-primary-orange flex-shrink-0" />
-                <span className="font-semibold">Cash On Delivery</span>
+                <span className="font-bold">Doorstep COD</span>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-gray-50/80 border border-gray-200/60 rounded-xl text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl text-center sm:text-left">
                 <ShieldCheck className="w-5 h-5 text-primary-orange flex-shrink-0" />
-                <span className="font-semibold">100% Original</span>
+                <span className="font-bold">100% Original</span>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-gray-50/80 border border-gray-200/60 rounded-xl text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-2 p-3 bg-slate-50/80 border border-slate-200/70 rounded-xl text-center sm:text-left">
                 <RotateCcw className="w-5 h-5 text-primary-orange flex-shrink-0" />
-                <span className="font-semibold">Verified Reviews</span>
+                <span className="font-bold">Verified Reviews</span>
               </div>
             </div>
           </div>
@@ -557,17 +557,19 @@ export default function ProductDetail() {
             {product.stock > 0 && !isCurrentSizeOutOfStock ? (
               <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center">
                 {/* Quantity selector */}
-                <div className="flex items-center justify-between border-2 border-gray-200 rounded-2xl bg-gray-50/50 px-2 py-1">
+                <div className="flex items-center justify-between border-2 border-slate-200 rounded-2xl bg-slate-50/70 px-2 py-1 shadow-2xs">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-10 h-10 rounded-xl text-charcoal hover:bg-white hover:shadow-xs transition font-extrabold text-lg cursor-pointer"
+                    className="w-10 h-10 rounded-xl text-slate-800 hover:bg-white hover:shadow-xs transition font-black text-lg cursor-pointer flex items-center justify-center"
+                    aria-label="Decrease quantity"
                   >
                     −
                   </button>
-                  <span className="px-5 text-base font-extrabold text-charcoal">{quantity}</span>
+                  <span className="px-5 text-base font-black text-slate-900">{quantity}</span>
                   <button
                     onClick={() => setQuantity((q) => Math.min(maxAvailableStock, q + 1))}
-                    className="w-10 h-10 rounded-xl text-charcoal hover:bg-white hover:shadow-xs transition font-extrabold text-lg cursor-pointer"
+                    className="w-10 h-10 rounded-xl text-slate-800 hover:bg-white hover:shadow-xs transition font-black text-lg cursor-pointer flex items-center justify-center"
+                    aria-label="Increase quantity"
                   >
                     +
                   </button>
@@ -576,7 +578,7 @@ export default function ProductDetail() {
                 {/* Add to Cart button */}
                 <button
                   onClick={handleAddToCart}
-                  className={`flex-1 font-bold py-3.5 px-8 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer text-base shadow-lg active:scale-95 ${
+                  className={`flex-1 font-extrabold py-3.5 px-8 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer text-base shadow-lg active:scale-98 ${
                     addedSuccess
                       ? 'bg-emerald-600 text-white shadow-emerald-500/25 scale-[1.02]'
                       : 'bg-primary-orange hover:bg-primary-orange-hover text-white shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35'
@@ -585,12 +587,12 @@ export default function ProductDetail() {
                   {addedSuccess ? (
                     <>
                       <CheckCircle className="w-5 h-5 text-white animate-bounce" />
-                      <span>Added to Cart!</span>
+                      <span>Added to Shopping Bag!</span>
                     </>
                   ) : (
                     <>
                       <ShoppingCart className="w-5 h-5" />
-                      <span>Add to Shopping Cart</span>
+                      <span>Add to Cart</span>
                     </>
                   )}
                 </button>
@@ -598,9 +600,9 @@ export default function ProductDetail() {
             ) : (
               <button
                 disabled
-                className="w-full bg-gray-100 border border-gray-200 text-gray-500 font-extrabold py-3.5 px-6 rounded-2xl cursor-not-allowed text-sm flex items-center justify-center gap-2"
+                className="w-full bg-slate-100 border border-slate-200 text-slate-400 font-extrabold py-3.5 px-6 rounded-2xl cursor-not-allowed text-sm flex items-center justify-center gap-2"
               >
-                <AlertCircle className="w-5 h-5 text-red-500" />
+                <AlertCircle className="w-5 h-5 text-rose-500" />
                 <span>
                   {product.stock <= 0
                     ? 'Item Currently Out of Stock'
@@ -613,24 +615,24 @@ export default function ProductDetail() {
       </div>
 
       {/* Verified Reviews Section */}
-      <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm p-6 sm:p-8 lg:p-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-100 mb-6">
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 sm:p-8 lg:p-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 mb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-primary-orange text-xs font-extrabold uppercase tracking-wider mb-1">
+            <div className="inline-flex items-center gap-1.5 text-primary-orange text-xs font-black uppercase tracking-wider mb-1">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Authentic Feedback</span>
+              <span>Verified Customer Feedback</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-charcoal flex items-center gap-2.5">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2.5">
               <span>Customer Reviews</span>
-              <span className="text-xs font-bold bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+              <span className="text-xs font-bold bg-slate-100 text-slate-700 px-3 py-1 rounded-full border border-slate-200/60">
                 {reviews.length} {reviews.length === 1 ? 'Review' : 'Reviews'}
               </span>
             </h2>
           </div>
 
           {product.average_rating && (
-            <div className="flex items-center gap-3 bg-amber-50/80 border border-amber-200/70 px-4 py-2.5 rounded-2xl">
-              <span className="text-2xl font-black text-charcoal">
+            <div className="flex items-center gap-3 bg-amber-50/80 border border-amber-200/80 px-4 py-2.5 rounded-2xl shadow-2xs">
+              <span className="text-2xl font-black text-slate-900">
                 {product.average_rating.toFixed(1)}
               </span>
               <div>
@@ -641,24 +643,24 @@ export default function ProductDetail() {
                       className={`w-3.5 h-3.5 ${
                         s <= Math.round(product.average_rating)
                           ? 'fill-amber-400 text-amber-400'
-                          : 'text-gray-300'
+                          : 'text-slate-300'
                       }`}
                     />
                   ))}
                 </div>
-                <span className="text-[11px] text-gray-500 font-medium">Overall Rating</span>
+                <span className="text-[11px] text-slate-500 font-bold">Overall Rating</span>
               </div>
             </div>
           )}
         </div>
 
         {/* Write a Review Form */}
-        <div className="bg-gray-50/80 rounded-2xl border border-gray-200/70 p-5 sm:p-6 mb-8">
-          <h3 className="text-base font-extrabold text-charcoal mb-1">
-            Write a Review
+        <div className="bg-slate-50/80 rounded-2xl border border-slate-200/80 p-5 sm:p-6 mb-8 shadow-2xs">
+          <h3 className="text-base font-black text-slate-900 mb-1">
+            Write a Customer Review
           </h3>
-          <p className="text-xs text-gray-500 mb-4">
-            Share your feedback with future buyers.
+          <p className="text-xs text-slate-500 mb-4 font-medium">
+            Share your authentic experience with this product to help fellow shoppers.
           </p>
 
           <form onSubmit={handleReviewSubmit} className="space-y-4">

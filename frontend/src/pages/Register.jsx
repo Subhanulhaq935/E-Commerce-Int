@@ -44,80 +44,80 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-[82vh] flex items-center justify-center bg-offwhite px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-gray-200/80 p-8 sm:p-10 relative overflow-hidden">
+    <div className="min-h-[82vh] flex items-center justify-center bg-slate-50/50 px-4 py-12">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-200/80 p-8 sm:p-10 relative overflow-hidden">
         {/* Top Decorative Gradient Accent */}
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-charcoal via-primary-orange to-amber-500" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-slate-900 via-primary-orange to-amber-500" />
 
         <div className="text-center mb-7">
           <Link to="/" className="inline-flex items-center justify-center space-x-2.5 mb-4 group">
             <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-200/60 flex items-center justify-center group-hover:bg-primary-orange transition-colors">
               <ShoppingBag className="w-6 h-6 text-primary-orange group-hover:text-white transition-colors" />
             </div>
-            <span className="text-2xl font-extrabold text-charcoal tracking-tight">
+            <span className="text-2xl font-black text-slate-900 tracking-tight">
               E-Shop<span className="text-primary-orange">.pk</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-extrabold text-charcoal">Create an Account</h2>
-          <p className="text-gray-500 text-sm mt-1">
+          <h2 className="text-2xl font-black text-slate-900">Create an Account</h2>
+          <p className="text-slate-500 text-sm mt-1">
             Join E-Shop.pk for fast checkout and order tracking
           </p>
         </div>
 
         {error && (
-          <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-2.5 text-red-600 text-xs sm:text-sm font-semibold">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-center gap-2.5 text-rose-700 text-xs sm:text-sm font-bold">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
               Full Name *
             </label>
             <div className="relative">
-              <User className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Muhammad Ali"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 text-sm transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/20 text-sm font-medium transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
               Email Address *
             </label>
             <div className="relative">
-              <Mail className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 text-sm transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/20 text-sm font-medium transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-              Phone Number <span className="text-gray-400 font-normal lowercase">(optional)</span>
+            <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1.5">
+              Phone Number <span className="text-slate-400 font-normal lowercase">(optional)</span>
             </label>
             <div className="relative">
-              <Phone className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Phone className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="+923001234567"
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15 text-sm transition-all"
+                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/20 text-sm font-medium transition-all"
               />
             </div>
           </div>

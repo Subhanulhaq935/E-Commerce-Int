@@ -6,3 +6,4 @@ uploads/*
 .pytest_cache/
 frontend/node_modules/
 frontend/dist/
+playwright_screenshots/
