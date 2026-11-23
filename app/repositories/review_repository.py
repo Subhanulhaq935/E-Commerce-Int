@@ -38,16 +38,20 @@ class ReviewRepository:
     @staticmethod
     def create(
         db: Session,
-        user_id: int,
+        user_id: Optional[int],
         product_id: int,
         rating: int,
         comment: Optional[str] = None,
+        guest_name: Optional[str] = None,
+        is_verified_purchase: bool = False,
     ) -> Review:
         review = Review(
             user_id=user_id,
+            guest_name=guest_name,
             product_id=product_id,
             rating=rating,
             comment=comment,
+            is_verified_purchase=is_verified_purchase,
         )
         db.add(review)
         db.commit()

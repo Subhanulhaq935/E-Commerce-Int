@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -12,7 +12,7 @@ class ReviewService:
     @staticmethod
     def create_review(
         db: Session,
-        user: User,
+        user: Optional[User],
         product_id: int,
         data: ReviewCreate,
     ) -> ReviewResponse:
@@ -24,42 +24,67 @@ class ReviewService:
                 detail="Product not found",
             )
 
-        # 2. Duplicate Review Check
-        existing_review = ReviewRepository.get_user_review(
-            db, user_id=user.id, product_id=product_id
-        )
-        if existing_review:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="You have already reviewed this product",
-            )
+        # 2. Authenticated user vs Guest handling
+        is_verified_purchase = False
+        user_id: Optional[int] = None
+        reviewer_name: str = ""
+        guest_name: Optional[str] = None
 
-        # 3. Verified Purchase Check (Must be in a delivered order)
-        has_purchased = ReviewRepository.has_delivered_purchase(
-            db, user_id=user.id, product_id=product_id
-        )
-        if not has_purchased:
+        if user:
+            # 2a. Duplicate Review Check for authenticated user
+            existing_review = ReviewRepository.get_user_review(
+                db, user_id=user.id, product_id=product_id
+            )
+            if existing_review:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="You have already reviewed this product",
+                )
+            user_id = user.id
+            reviewer_name = user.name
+            # Check if this buyer has a delivered purchase for this product
+            is_verified_purchase = ReviewRepository.has_delivered_purchase(
+                db, user_id=user.id, product_id=product_id
+            )
+        else:
+            # 2b. Guest user: require valid name
+            raw_name = data.guest_name.strip() if data.guest_name else ""
+            if not raw_name or len(raw_name) < 2:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Please enter your name (at least 2 characters)",
+                )
+            guest_name = raw_name
+            reviewer_name = raw_name
+            is_verified_purchase = False
+
+        # 3. Comment validation
+        comment = data.comment.strip() if data.comment else ""
+        if not comment:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only review products from delivered orders",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Review comment cannot be empty",
             )
 
         # 4. Review Create
         review = ReviewRepository.create(
             db,
-            user_id=user.id,
+            user_id=user_id,
+            guest_name=guest_name,
             product_id=product_id,
             rating=data.rating,
-            comment=data.comment,
+            comment=comment,
+            is_verified_purchase=is_verified_purchase,
         )
 
         return ReviewResponse(
             id=review.id,
-            user_id=user.id,
-            user_name=user.name,
+            user_id=review.user_id,
+            user_name=reviewer_name,
             product_id=product_id,
             rating=review.rating,
             comment=review.comment,
+            is_verified_purchase=review.is_verified_purchase,
             created_at=review.created_at,
         )
 
@@ -85,10 +110,11 @@ class ReviewService:
             ReviewResponse(
                 id=r.id,
                 user_id=r.user_id,
-                user_name=r.user.name if r.user else "Anonymous",
+                user_name=r.user.name if r.user else (r.guest_name or "Guest"),
                 product_id=r.product_id,
                 rating=r.rating,
                 comment=r.comment,
+                is_verified_purchase=r.is_verified_purchase,
                 created_at=r.created_at,
             )
             for r in reviews

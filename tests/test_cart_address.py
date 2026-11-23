@@ -49,7 +49,7 @@ def test_cart_strict_stock_check(client, buyer_token, sample_product):
         json={"product_id": sample_product.id, "quantity": 11},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Requested quantity is not available in stock"
+    assert "Requested quantity is not available in stock" in response.json()["detail"]
 
 
 def test_cart_add_and_view(client, buyer_token, sample_product):

@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies.auth import require_buyer
+from app.dependencies.auth import get_optional_current_user
 from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse
 from app.services.review_service import ReviewService
@@ -15,15 +15,15 @@ router = APIRouter(prefix="/products", tags=["Reviews"])
     "/{id}/reviews",
     response_model=ReviewResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Add a product review (Verified Buyer only)",
+    summary="Add a product review (Guest or Authenticated)",
 )
 def create_product_review(
     id: int,
     data: ReviewCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_buyer),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Product par review dein (Sirf wo buyer jis ka order delivered ho chuka ho)"""
+    """Product par review dein (Authenticated user ya Guest visitor)"""
     return ReviewService.create_review(
         db, user=current_user, product_id=id, data=data
     )

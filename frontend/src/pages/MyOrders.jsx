@@ -73,12 +73,16 @@ export default function MyOrders() {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault()
-    setSubmittingReview(true)
     setReviewMessage({ type: '', text: '' })
+    if (!comment || !comment.trim()) {
+      setReviewMessage({ type: 'error', text: 'Please write a review comment.' })
+      return
+    }
+    setSubmittingReview(true)
     try {
       await api.post(`/products/${reviewModal.productId}/reviews`, {
         rating,
-        comment: comment || null,
+        comment: comment.trim(),
       })
       setReviewMessage({ type: 'success', text: 'Thank you! Your verified review has been posted.' })
       setTimeout(() => {
@@ -431,10 +435,11 @@ export default function MyOrders() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Your Experience (Optional)
+                  Your Experience <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows={3}
+                  required
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Share your thoughts on product quality, packaging, and delivery..."
