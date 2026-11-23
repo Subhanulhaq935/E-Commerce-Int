@@ -1,7 +1,7 @@
 from typing import Optional, Sequence
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.enums import OrderStatus, PaymentStatus, UserRole
 from app.models.order import Order
@@ -36,13 +36,23 @@ class AdminService:
             order.payment.status = PaymentStatus.cancelled
             order.payment.paid_at = None
 
-        # Stock restore karein (Har product ka stock wapas add karein)
+        # Stock restore karein (Har product aur size ka stock wapas add karein)
         for item in order.items:
             product = db.scalar(
-                select(Product).where(Product.id == item.product_id)
+                select(Product)
+                .options(selectinload(Product.sizes))
+                .where(Product.id == item.product_id)
             )
             if product:
                 product.stock += item.quantity
+                if product.has_sizes and item.size:
+                    clean_size = item.size.strip().lower()
+                    size_variant = next(
+                        (s for s in product.sizes if s.size.strip().lower() == clean_size),
+                        None,
+                    )
+                    if size_variant:
+                        size_variant.stock += item.quantity
 
         db.commit()
         db.refresh(order)

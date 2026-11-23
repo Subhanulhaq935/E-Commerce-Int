@@ -236,9 +236,16 @@ export default function TrackOrder() {
                       <ShoppingBag className="w-6 h-6 text-gray-300" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="font-extrabold text-charcoal text-sm truncate">
-                        {it.product_name}
-                      </h4>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-extrabold text-charcoal text-sm truncate">
+                          {it.product_name}
+                        </h4>
+                        {it.size && (
+                          <span className="text-[10px] font-extrabold bg-orange-50 text-primary-orange px-2 py-0.5 rounded-full border border-orange-200">
+                            Size: {it.size}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Rs. {Number(it.unit_price).toLocaleString()} × <strong className="text-charcoal">{it.quantity}</strong>
                       </p>

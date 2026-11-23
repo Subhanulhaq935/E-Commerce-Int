@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class CartItemCreate(BaseModel):
     product_id: int
     quantity: int = Field(default=1, ge=1, description="Quantity must be at least 1")
+    size: Optional[str] = None
 
 
 class CartItemUpdate(BaseModel):
@@ -17,6 +18,8 @@ class CartItemResponse(BaseModel):
     product_id: int
     product_name: str
     unit_price: Decimal
+    original_price: Optional[Decimal] = None
+    size: Optional[str] = None
     quantity: int
     subtotal: Decimal
     image_url: Optional[str] = None

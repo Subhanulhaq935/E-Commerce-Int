@@ -4,7 +4,7 @@ import secrets
 from typing import Any, Dict, Optional, Sequence
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
 from app.models.enums import OrderStatus, PaymentStatus, UserRole
@@ -16,6 +16,7 @@ from app.repositories.cart_repository import CartRepository
 from app.repositories.order_repository import OrderRepository
 from app.schemas.order import CheckoutRequest, GuestCheckoutRequest
 from app.services.email_service import EmailService
+from app.services.product_service import ProductService
 
 
 class OrderService:
@@ -46,6 +47,7 @@ class OrderService:
             # Row lock: SELECT ... FOR UPDATE
             locked_products = db.scalars(
                 select(Product)
+                .options(selectinload(Product.sizes))
                 .where(Product.id.in_(product_ids))
                 .order_by(Product.id.asc())
                 .with_for_update()
@@ -61,18 +63,44 @@ class OrderService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Product is not active",
                     )
-                if item.quantity > product.stock:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Requested quantity is not available in stock",
+                if product.has_sizes:
+                    if not item.size:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Size selection is required for '{product.name}'",
+                        )
+                    clean_size = item.size.strip().lower()
+                    size_variant = next(
+                        (
+                            s
+                            for s in product.sizes
+                            if s.size.strip().lower() == clean_size and s.is_available
+                        ),
+                        None,
                     )
+                    if not size_variant:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Size '{item.size}' for '{product.name}' is no longer available",
+                        )
+                    if item.quantity > size_variant.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' (Size: {item.size}) exceeds available stock ({size_variant.stock})",
+                        )
+                else:
+                    if item.quantity > product.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' is not available in stock",
+                        )
 
-            # 5. Total calculation (DB prices se, client se nahi)
+            # 5. Total calculation (DB prices se, client se nahi - using effective size/sale price)
             subtotal_sum = Decimal("0.00")
             for item in cart.items:
                 product = products_by_id[item.product_id]
-                unit_price = Decimal(str(product.price))
-                subtotal_sum += unit_price * item.quantity
+                effective_price, _ = ProductService.get_effective_price(product, item.size)
+                subtotal_sum += effective_price * item.quantity
 
             delivery_charge = Decimal(str(settings.DELIVERY_CHARGE))
             grand_total = subtotal_sum + delivery_charge
@@ -88,8 +116,8 @@ class OrderService:
             # 7. Create Order Items & Deduct Stock
             for item in cart.items:
                 product = products_by_id[item.product_id]
-                unit_price = Decimal(str(product.price))
-                item_subtotal = unit_price * item.quantity
+                effective_price, _ = ProductService.get_effective_price(product, item.size)
+                item_subtotal = effective_price * item.quantity
 
                 OrderRepository.create_order_item(
                     db,
@@ -97,12 +125,25 @@ class OrderService:
                     product_id=product.id,
                     product_name=product.name,
                     quantity=item.quantity,
-                    unit_price=unit_price,
+                    unit_price=effective_price,
                     subtotal=item_subtotal,
+                    size=item.size,
                 )
 
-                # Stock deduction
+                # Stock deduction (both overall and size variant)
                 product.stock -= item.quantity
+                if product.has_sizes and item.size:
+                    clean_size = item.size.strip().lower()
+                    size_variant = next(
+                        (
+                            s
+                            for s in product.sizes
+                            if s.size.strip().lower() == clean_size
+                        ),
+                        None,
+                    )
+                    if size_variant:
+                        size_variant.stock -= item.quantity
 
             # 8. Create Payment (COD, pending)
             OrderRepository.create_payment(
@@ -148,6 +189,7 @@ class OrderService:
             # Row lock: SELECT ... FOR UPDATE
             locked_products = db.scalars(
                 select(Product)
+                .options(selectinload(Product.sizes))
                 .where(Product.id.in_(product_ids))
                 .order_by(Product.id.asc())
                 .with_for_update()
@@ -163,18 +205,44 @@ class OrderService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Product #{item.product_id} is not active",
                     )
-                if item.quantity > product.stock:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Requested quantity for '{product.name}' exceeds available stock ({product.stock})",
+                if product.has_sizes:
+                    if not item.size:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Size selection is required for '{product.name}'",
+                        )
+                    clean_size = item.size.strip().lower()
+                    size_variant = next(
+                        (
+                            s
+                            for s in product.sizes
+                            if s.size.strip().lower() == clean_size and s.is_available
+                        ),
+                        None,
                     )
+                    if not size_variant:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Size '{item.size}' for '{product.name}' is no longer available",
+                        )
+                    if item.quantity > size_variant.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' (Size: {item.size}) exceeds available stock ({size_variant.stock})",
+                        )
+                else:
+                    if item.quantity > product.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' exceeds available stock ({product.stock})",
+                        )
 
-            # 3. Total calculation (DB prices se calculate karein)
+            # 3. Total calculation (DB prices se calculate karein - using effective size/sale price)
             subtotal_sum = Decimal("0.00")
             for item in data.items:
                 product = products_by_id[item.product_id]
-                unit_price = Decimal(str(product.price))
-                subtotal_sum += unit_price * item.quantity
+                effective_price, _ = ProductService.get_effective_price(product, item.size)
+                subtotal_sum += effective_price * item.quantity
 
             delivery_charge = Decimal(str(settings.DELIVERY_CHARGE))
             grand_total = subtotal_sum + delivery_charge
@@ -200,8 +268,8 @@ class OrderService:
             # 6. Create Order Items & Deduct Stock
             for item in data.items:
                 product = products_by_id[item.product_id]
-                unit_price = Decimal(str(product.price))
-                item_subtotal = unit_price * item.quantity
+                effective_price, _ = ProductService.get_effective_price(product, item.size)
+                item_subtotal = effective_price * item.quantity
 
                 OrderRepository.create_order_item(
                     db,
@@ -209,12 +277,25 @@ class OrderService:
                     product_id=product.id,
                     product_name=product.name,
                     quantity=item.quantity,
-                    unit_price=unit_price,
+                    unit_price=effective_price,
                     subtotal=item_subtotal,
+                    size=item.size,
                 )
 
-                # Stock deduction
+                # Stock deduction (overall and size variant)
                 product.stock -= item.quantity
+                if product.has_sizes and item.size:
+                    clean_size = item.size.strip().lower()
+                    size_variant = next(
+                        (
+                            s
+                            for s in product.sizes
+                            if s.size.strip().lower() == clean_size
+                        ),
+                        None,
+                    )
+                    if size_variant:
+                        size_variant.stock -= item.quantity
 
             # 7. Create Payment (COD, pending)
             OrderRepository.create_payment(

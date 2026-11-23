@@ -298,8 +298,16 @@ export default function MyOrders() {
                             >
                               {productName}
                             </Link>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 font-medium">
+                            <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 font-medium flex-wrap">
                               <span className="font-bold text-charcoal">Qty: {item.quantity}</span>
+                              {item.size && (
+                                <>
+                                  <span>•</span>
+                                  <span className="bg-orange-50 text-primary-orange border border-orange-200 font-extrabold text-[11px] px-2 py-0.5 rounded-md">
+                                    Size: {item.size}
+                                  </span>
+                                </>
+                              )}
                               <span>•</span>
                               <span>Rs. {Number(item.unit_price).toLocaleString()} each</span>
                               {pInfo?.category_id && (

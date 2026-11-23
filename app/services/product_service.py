@@ -105,7 +105,37 @@ class ProductService:
                     detail="Invalid category_id: Category does not exist",
                 )
 
+        # Cross-validation between existing/updated price and sale_price
+        new_price = data.price if data.price is not None else product.price
+        new_sale_price = data.sale_price if data.sale_price is not None else product.sale_price
+        if new_sale_price is not None and new_price is not None and new_sale_price >= new_price:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sale price must be less than normal price",
+            )
+
         return ProductRepository.update(db, product=product, data=data)
+
+    @staticmethod
+    def get_effective_price(product: Product, size: Optional[str] = None) -> tuple[Decimal, Optional[Decimal]]:
+        """
+        Returns (effective_selling_price, original_price).
+        If size is provided and that size has its own price, size pricing is used.
+        Otherwise falls back to product.sale_price / product.price.
+        """
+        if size and product.has_sizes and product.sizes:
+            clean_sz = size.strip().lower()
+            size_obj = next((s for s in product.sizes if s.size.strip().lower() == clean_sz), None)
+            if size_obj and size_obj.price is not None:
+                norm_price = Decimal(str(size_obj.price))
+                sale_price = Decimal(str(size_obj.sale_price)) if size_obj.sale_price is not None else None
+                selling_price = sale_price if sale_price is not None else norm_price
+                return (selling_price, norm_price if sale_price is not None else None)
+
+        norm_price = Decimal(str(product.price))
+        sale_price = Decimal(str(product.sale_price)) if product.sale_price is not None else None
+        selling_price = sale_price if sale_price is not None else norm_price
+        return (selling_price, norm_price if sale_price is not None else None)
 
     @staticmethod
     def delete(db: Session, product_id: int) -> Product:

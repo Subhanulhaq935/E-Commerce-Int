@@ -19,6 +19,7 @@ from app.core.database import Base
 if TYPE_CHECKING:
     from app.models.category import Category
     from app.models.product_image import ProductImage
+    from app.models.product_size import ProductSize
     from app.models.cart_item import CartItem
     from app.models.order_item import OrderItem
     from app.models.review import Review
@@ -29,6 +30,10 @@ class Product(Base):
     __table_args__ = (
         CheckConstraint("price > 0", name="check_product_price_positive"),
         CheckConstraint("stock >= 0", name="check_product_stock_non_negative"),
+        CheckConstraint(
+            "sale_price IS NULL OR (sale_price > 0 AND sale_price < price)",
+            name="check_product_sale_price_valid",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -38,6 +43,8 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    sale_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2), nullable=True)
+    has_sizes: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -54,6 +61,12 @@ class Product(Base):
     category: Mapped["Category"] = relationship("Category", back_populates="products")
     images: Mapped[List["ProductImage"]] = relationship(
         "ProductImage", back_populates="product", cascade="all, delete-orphan"
+    )
+    sizes: Mapped[List["ProductSize"]] = relationship(
+        "ProductSize",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductSize.id",
     )
     cart_items: Mapped[List["CartItem"]] = relationship(
         "CartItem", back_populates="product", cascade="all, delete-orphan"

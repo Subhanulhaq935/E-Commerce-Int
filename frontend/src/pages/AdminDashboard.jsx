@@ -53,8 +53,15 @@ export default function AdminDashboard() {
     name: '',
     description: '',
     price: '',
+    sale_price: '',
     stock: '',
     category_id: '',
+    has_sizes: false,
+    sizes: [
+      { size: 'S', stock: '', price: '', sale_price: '', is_available: true },
+      { size: 'M', stock: '', price: '', sale_price: '', is_available: true },
+      { size: 'L', stock: '', price: '', sale_price: '', is_available: true },
+    ],
   })
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -65,7 +72,14 @@ export default function AdminDashboard() {
     id: null,
     name: '',
     price: '',
+    sale_price: '',
     stock: '',
+    has_sizes: false,
+    sizes: [
+      { size: 'S', stock: '', price: '', sale_price: '', is_available: false },
+      { size: 'M', stock: '', price: '', sale_price: '', is_available: false },
+      { size: 'L', stock: '', price: '', sale_price: '', is_available: false },
+    ],
   })
 
   // Upload & Manage Images Modal
@@ -156,19 +170,117 @@ export default function AdminDashboard() {
     }
   }
 
+  const openEditProductModal = (p) => {
+    const sSize = p.sizes?.find((s) => s.size === 'S')
+    const mSize = p.sizes?.find((s) => s.size === 'M')
+    const lSize = p.sizes?.find((s) => s.size === 'L')
+
+    setEditProduct({
+      open: true,
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      sale_price: p.sale_price !== null && p.sale_price !== undefined ? p.sale_price : '',
+      stock: p.stock,
+      has_sizes: Boolean(p.has_sizes),
+      sizes: [
+        {
+          size: 'S',
+          stock: sSize ? sSize.stock : 0,
+          price: sSize?.price !== null && sSize?.price !== undefined ? sSize.price : '',
+          sale_price: sSize?.sale_price !== null && sSize?.sale_price !== undefined ? sSize.sale_price : '',
+          is_available: Boolean(sSize ? sSize.is_available : false),
+        },
+        {
+          size: 'M',
+          stock: mSize ? mSize.stock : 0,
+          price: mSize?.price !== null && mSize?.price !== undefined ? mSize.price : '',
+          sale_price: mSize?.sale_price !== null && mSize?.sale_price !== undefined ? mSize.sale_price : '',
+          is_available: Boolean(mSize ? mSize.is_available : false),
+        },
+        {
+          size: 'L',
+          stock: lSize ? lSize.stock : 0,
+          price: lSize?.price !== null && lSize?.price !== undefined ? lSize.price : '',
+          sale_price: lSize?.sale_price !== null && lSize?.sale_price !== undefined ? lSize.sale_price : '',
+          is_available: Boolean(lSize ? lSize.is_available : false),
+        },
+      ],
+    })
+  }
+
   const handleCreateProduct = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/products/', {
-        ...newProduct,
-        price: parseFloat(newProduct.price),
-        stock: parseInt(newProduct.stock),
+      const priceNum = parseFloat(newProduct.price)
+      const salePriceNum = newProduct.sale_price ? parseFloat(newProduct.sale_price) : null
+
+      if (salePriceNum !== null && (isNaN(salePriceNum) || salePriceNum <= 0)) {
+        notifyError('Sale price must be a valid positive number.')
+        return
+      }
+
+      if (salePriceNum !== null && salePriceNum >= priceNum) {
+        notifyError('Sale price must be strictly lower than normal price.')
+        return
+      }
+
+      const payload = {
+        name: newProduct.name.trim(),
+        description: newProduct.description,
+        price: priceNum,
+        sale_price: salePriceNum,
         category_id: parseInt(newProduct.category_id),
-      })
+        has_sizes: Boolean(newProduct.has_sizes),
+      }
+
+      if (newProduct.has_sizes) {
+        const sizesPayload = newProduct.sizes
+          .filter((s) => s.is_available)
+          .map((s) => ({
+            size: s.size,
+            stock: parseInt(s.stock) || 0,
+            price: s.price ? parseFloat(s.price) : null,
+            sale_price: s.sale_price ? parseFloat(s.sale_price) : null,
+            is_available: true,
+          }))
+
+        if (sizesPayload.length === 0) {
+          notifyError('Please enable at least one size variant (Small, Medium, or Large).')
+          return
+        }
+
+        for (const s of sizesPayload) {
+          if (s.price !== null && s.sale_price !== null && s.sale_price >= s.price) {
+            notifyError(`Size '${s.size}' sale price must be less than its normal price.`)
+            return
+          }
+        }
+
+        payload.sizes = sizesPayload
+        payload.stock = sizesPayload.reduce((sum, s) => sum + s.stock, 0)
+      } else {
+        payload.stock = parseInt(newProduct.stock) || 0
+      }
+
+      await api.post('/products/', payload)
       setCachedProducts(null)
       notifySuccess('Product added successfully!')
       setShowAddProduct(false)
-      setNewProduct({ name: '', description: '', price: '', stock: '', category_id: '' })
+      setNewProduct({
+        name: '',
+        description: '',
+        price: '',
+        sale_price: '',
+        stock: '',
+        category_id: '',
+        has_sizes: false,
+        sizes: [
+          { size: 'S', stock: '', price: '', sale_price: '', is_available: true },
+          { size: 'M', stock: '', price: '', sale_price: '', is_available: true },
+          { size: 'L', stock: '', price: '', sale_price: '', is_available: true },
+        ],
+      })
       const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
@@ -192,13 +304,71 @@ export default function AdminDashboard() {
   const handleUpdateProduct = async (e) => {
     e.preventDefault()
     try {
-      await api.put(`/products/${editProduct.id}`, {
-        stock: parseInt(editProduct.stock),
-        price: parseFloat(editProduct.price),
-      })
+      const priceNum = parseFloat(editProduct.price)
+      const salePriceNum = editProduct.sale_price ? parseFloat(editProduct.sale_price) : null
+
+      if (salePriceNum !== null && (isNaN(salePriceNum) || salePriceNum <= 0)) {
+        notifyError('Sale price must be a valid positive number.')
+        return
+      }
+
+      if (salePriceNum !== null && salePriceNum >= priceNum) {
+        notifyError('Sale price must be strictly lower than normal price.')
+        return
+      }
+
+      const payload = {
+        price: priceNum,
+        sale_price: salePriceNum,
+        has_sizes: Boolean(editProduct.has_sizes),
+      }
+
+      if (editProduct.has_sizes) {
+        const sizesPayload = editProduct.sizes
+          .filter((s) => s.is_available)
+          .map((s) => ({
+            size: s.size,
+            stock: parseInt(s.stock) || 0,
+            price: s.price ? parseFloat(s.price) : null,
+            sale_price: s.sale_price ? parseFloat(s.sale_price) : null,
+            is_available: true,
+          }))
+
+        if (sizesPayload.length === 0) {
+          notifyError('Please enable at least one size variant (Small, Medium, or Large).')
+          return
+        }
+
+        for (const s of sizesPayload) {
+          if (s.price !== null && s.sale_price !== null && s.sale_price >= s.price) {
+            notifyError(`Size '${s.size}' sale price must be less than its normal price.`)
+            return
+          }
+        }
+
+        payload.sizes = sizesPayload
+        payload.stock = sizesPayload.reduce((sum, s) => sum + s.stock, 0)
+      } else {
+        payload.stock = parseInt(editProduct.stock) || 0
+      }
+
+      await api.put(`/products/${editProduct.id}`, payload)
       setCachedProducts(null)
       notifySuccess('Product stock & price updated successfully!')
-      setEditProduct({ open: false, id: null, name: '', price: '', stock: '' })
+      setEditProduct({
+        open: false,
+        id: null,
+        name: '',
+        price: '',
+        sale_price: '',
+        stock: '',
+        has_sizes: false,
+        sizes: [
+          { size: 'S', stock: '', price: '', sale_price: '', is_available: false },
+          { size: 'M', stock: '', price: '', sale_price: '', is_available: false },
+          { size: 'L', stock: '', price: '', sale_price: '', is_available: false },
+        ],
+      })
       const res = await api.get('/admin/products?limit=100')
       setProducts(res.data)
     } catch (err) {
@@ -594,8 +764,13 @@ export default function AdminDashboard() {
                     <td className="py-4 px-5 space-y-1">
                       {ord.items?.map((it) => (
                         <div key={it.id} className="text-gray-600 text-xs font-medium">
-                          {it.product?.name || `Product #${it.product_id}`} ×{' '}
-                          <strong className="text-charcoal">{it.quantity}</strong>
+                          {it.product?.name || `Product #${it.product_id}`}{' '}
+                          {it.size && (
+                            <span className="bg-orange-50 text-primary-orange border border-orange-200 text-[10px] font-bold px-1.5 py-0.5 rounded mx-1">
+                              Size: {it.size}
+                            </span>
+                          )}
+                          × <strong className="text-charcoal">{it.quantity}</strong>
                         </div>
                       ))}
                     </td>
@@ -803,24 +978,63 @@ export default function AdminDashboard() {
                             {categories.find((c) => c.id === p.category_id)?.name || 'General'}
                           </span>
                         </td>
-                        <td className="py-3.5 px-5 font-extrabold text-charcoal text-sm">
-                          Rs. {Number(p.price).toLocaleString()}
+                        <td className="py-3.5 px-5">
+                          {p.sale_price ? (
+                            <div>
+                              <span className="font-extrabold text-charcoal text-sm block">
+                                Rs. {Number(p.sale_price).toLocaleString()}
+                              </span>
+                              <span className="text-gray-400 text-xs line-through block">
+                                Rs. {Number(p.price).toLocaleString()}
+                              </span>
+                              <span className="inline-block bg-orange-100 text-primary-orange text-[10px] font-black px-1.5 py-0.2 rounded mt-0.5">
+                                Sale
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="font-extrabold text-charcoal text-sm">
+                              Rs. {Number(p.price).toLocaleString()}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3.5 px-5">
-                          <span
-                            className={`inline-flex items-center gap-1.5 font-extrabold px-2.5 py-1 rounded-full text-[11px] ${
-                              p.stock > 0
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-red-50 text-red-600 border border-red-200/60'
-                            }`}
-                          >
+                          <div>
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                p.stock > 0 ? 'bg-emerald-500' : 'bg-red-500'
+                              className={`inline-flex items-center gap-1.5 font-extrabold px-2.5 py-1 rounded-full text-[11px] ${
+                                p.stock > 0
+                                  ? 'bg-emerald-50 text-emerald-700'
+                                  : 'bg-red-50 text-red-600 border border-red-200/60'
                               }`}
-                            />
-                            {p.stock} units
-                          </span>
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  p.stock > 0 ? 'bg-emerald-500' : 'bg-red-500'
+                                }`}
+                              />
+                              {p.stock} units
+                            </span>
+                            {p.has_sizes && p.sizes && p.sizes.length > 0 && (
+                              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                {p.sizes.map((sz) => (
+                                  <span
+                                    key={sz.size}
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                      sz.stock > 0
+                                        ? 'bg-gray-50 border-gray-200 text-charcoal'
+                                        : 'bg-red-50 border-red-200 text-red-500'
+                                    }`}
+                                  >
+                                    {sz.size}: {sz.stock}
+                                    {sz.price && (
+                                      <span className="text-primary-orange ml-1 font-extrabold">
+                                        (Rs. {Number(sz.sale_price || sz.price).toLocaleString()})
+                                      </span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-5">
                           {p.is_active ? (
@@ -863,15 +1077,7 @@ export default function AdminDashboard() {
                             )}
                           </button>
                           <button
-                            onClick={() =>
-                              setEditProduct({
-                                open: true,
-                                id: p.id,
-                                name: p.name,
-                                price: p.price,
-                                stock: p.stock,
-                              })
-                            }
+                            onClick={() => openEditProductModal(p)}
                             className="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/60 px-3 py-1.5 rounded-xl text-[11px] font-bold transition inline-flex items-center gap-1.5 cursor-pointer"
                             title="Update stock & price"
                           >
@@ -981,7 +1187,16 @@ export default function AdminDashboard() {
                           </span>
                         </td>
                         <td className="py-3.5 px-5 font-extrabold text-charcoal text-sm">
-                          Rs. {Number(p.price).toLocaleString()}
+                          {p.sale_price ? (
+                            <div>
+                              <span className="block">Rs. {Number(p.sale_price).toLocaleString()}</span>
+                              <span className="text-gray-400 text-xs line-through block">
+                                Rs. {Number(p.price).toLocaleString()}
+                              </span>
+                            </div>
+                          ) : (
+                            <span>Rs. {Number(p.price).toLocaleString()}</span>
+                          )}
                         </td>
                         <td className="py-3.5 px-5">
                           <span className="inline-flex items-center gap-1.5 font-extrabold px-3 py-1 rounded-full text-[11px] bg-red-100 text-red-700 border border-red-200">
@@ -991,15 +1206,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3.5 px-5 text-right space-x-2 whitespace-nowrap">
                           <button
-                            onClick={() =>
-                              setEditProduct({
-                                open: true,
-                                id: p.id,
-                                name: p.name,
-                                price: p.price,
-                                stock: p.stock,
-                              })
-                            }
+                            onClick={() => openEditProductModal(p)}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 px-3.5 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -1106,8 +1313,8 @@ export default function AdminDashboard() {
       {/* MODAL 1: ADD PRODUCT */}
       {showAddProduct && (
         <div className="fixed inset-0 bg-charcoal/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div>
                 <h3 className="text-lg font-extrabold text-charcoal">Add New Product</h3>
                 <p className="text-xs text-gray-400">Add a new item to your store catalog</p>
@@ -1120,7 +1327,7 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateProduct} className="space-y-4">
+            <form onSubmit={handleCreateProduct} className="space-y-4 overflow-y-auto pr-1 flex-1">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5">Product Name</label>
                 <input
@@ -1150,32 +1357,210 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Pricing Section: Normal Price & Sale Price */}
+              <div className="grid grid-cols-2 gap-3 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-200/70">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">Price (PKR)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={newProduct.price}
-                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                    placeholder="2500"
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                    Stock Quantity
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Normal Price (PKR) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
+                    step="0.01"
+                    min="1"
                     required
-                    value={newProduct.stock}
-                    onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                    placeholder="20"
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                    value={newProduct.price}
+                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                    placeholder="e.g. 5000"
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
                   />
+                  <span className="text-[10px] text-gray-400 mt-1 block">Original product price</span>
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Sale Price (PKR) <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={newProduct.sale_price}
+                    onChange={(e) => setNewProduct({ ...newProduct, sale_price: e.target.value })}
+                    placeholder="e.g. 4000"
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                  />
+                  {newProduct.price && newProduct.sale_price && Number(newProduct.sale_price) < Number(newProduct.price) ? (
+                    <span className="text-[10px] text-emerald-600 font-bold mt-1 block">
+                      Save {Math.round(((Number(newProduct.price) - Number(newProduct.sale_price)) / Number(newProduct.price)) * 100)}% off
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 mt-1 block">Discounted selling price</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Size Variants Toggle Section */}
+              <div className="bg-orange-50/40 p-3.5 rounded-2xl border border-orange-200/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-extrabold text-charcoal flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newProduct.has_sizes}
+                        onChange={(e) => setNewProduct({ ...newProduct, has_sizes: e.target.checked })}
+                        className="rounded text-primary-orange focus:ring-primary-orange w-4 h-4 cursor-pointer"
+                      />
+                      <span>Enable Size Variants (Small, Medium, Large)</span>
+                    </label>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Check for clothing (T-shirts, hoodies). Uncheck for electronics, watches, etc.
+                    </p>
+                  </div>
+                </div>
+
+                {newProduct.has_sizes ? (
+                  <div className="space-y-3 pt-2 border-t border-orange-200/60">
+                    <div>
+                      <span className="text-[11px] font-extrabold text-charcoal block">
+                        Available Sizes, Stock & Individual Prices:
+                      </span>
+                      <p className="text-[10px] text-gray-500">
+                        Leave Size Price blank to use Base Price (Rs. {newProduct.price || '0'}).
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {['S', 'M', 'L'].map((szCode) => {
+                        const sizeLabel = szCode === 'S' ? 'Small (S)' : szCode === 'M' ? 'Medium (M)' : 'Large (L)'
+                        const szObj = newProduct.sizes.find((s) => s.size === szCode) || {
+                          stock: '',
+                          price: '',
+                          sale_price: '',
+                          is_available: true,
+                        }
+
+                        return (
+                          <div
+                            key={szCode}
+                            className={`p-3 rounded-2xl border transition ${
+                              szObj.is_available
+                                ? 'bg-white border-primary-orange/40 shadow-2xs'
+                                : 'bg-gray-100/60 border-gray-200 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="flex items-center gap-2 text-xs font-bold text-charcoal cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={szObj.is_available}
+                                  onChange={(e) => {
+                                    const updatedSizes = newProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, is_available: e.target.checked } : s
+                                    )
+                                    setNewProduct({ ...newProduct, sizes: updatedSizes })
+                                  }}
+                                  className="rounded text-primary-orange focus:ring-primary-orange w-4 h-4 cursor-pointer"
+                                />
+                                <span className="font-extrabold text-sm">{sizeLabel}</span>
+                              </label>
+                              <span className="text-[10px] text-gray-400 font-semibold">
+                                {szObj.is_available ? 'Available' : 'Disabled'}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 mb-1">
+                                  Stock Units <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  disabled={!szObj.is_available}
+                                  value={szObj.stock}
+                                  onChange={(e) => {
+                                    const updatedSizes = newProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, stock: e.target.value } : s
+                                    )
+                                    setNewProduct({ ...newProduct, sizes: updatedSizes })
+                                  }}
+                                  placeholder="e.g. 10"
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-primary-orange bg-white disabled:bg-gray-100 font-bold"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 mb-1">
+                                  Normal Price
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  disabled={!szObj.is_available}
+                                  value={szObj.price || ''}
+                                  onChange={(e) => {
+                                    const updatedSizes = newProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, price: e.target.value } : s
+                                    )
+                                    setNewProduct({ ...newProduct, sizes: updatedSizes })
+                                  }}
+                                  placeholder={newProduct.price ? `Rs. ${newProduct.price}` : 'Base price'}
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-primary-orange bg-white disabled:bg-gray-100 font-medium"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 mb-1">
+                                  Sale Price
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  disabled={!szObj.is_available}
+                                  value={szObj.sale_price || ''}
+                                  onChange={(e) => {
+                                    const updatedSizes = newProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, sale_price: e.target.value } : s
+                                    )
+                                    setNewProduct({ ...newProduct, sizes: updatedSizes })
+                                  }}
+                                  placeholder="Optional"
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-primary-orange bg-white disabled:bg-gray-100 font-medium"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="text-[11px] text-gray-500 text-right font-medium">
+                      Total Size Stock:{' '}
+                      <strong className="text-charcoal font-bold">
+                        {newProduct.sizes
+                          .filter((s) => s.is_available)
+                          .reduce((sum, s) => sum + (parseInt(s.stock) || 0), 0)}{' '}
+                        units
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                      Stock Quantity (Single inventory)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      required={!newProduct.has_sizes}
+                      value={newProduct.stock}
+                      onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                      placeholder="e.g. 20"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -1189,7 +1574,7 @@ export default function AdminDashboard() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowAddProduct(false)}
@@ -1408,15 +1793,15 @@ export default function AdminDashboard() {
       {/* MODAL 4: EDIT STOCK & PRICE */}
       {editProduct.open && (
         <div className="fixed inset-0 bg-charcoal/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-gray-100 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
               <div>
-                <h3 className="text-lg font-extrabold text-charcoal">Update Stock & Price</h3>
+                <h3 className="text-lg font-extrabold text-charcoal">Update Stock & Pricing</h3>
                 <p className="text-xs text-gray-500 font-medium">{editProduct.name}</p>
               </div>
               <button
                 onClick={() =>
-                  setEditProduct({ open: false, id: null, name: '', price: '', stock: '' })
+                  setEditProduct({ open: false, id: null, name: '', price: '', sale_price: '', stock: '', has_sizes: false, sizes: [] })
                 }
                 className="text-gray-400 hover:text-charcoal p-1.5 rounded-xl hover:bg-gray-100 transition cursor-pointer"
               >
@@ -1424,41 +1809,216 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateProduct} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Stock Units Available
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={editProduct.stock}
-                  onChange={(e) => setEditProduct({ ...editProduct, stock: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
-                />
+            <form onSubmit={handleUpdateProduct} className="space-y-4 overflow-y-auto pr-1 flex-1">
+              {/* Pricing Section: Normal Price & Sale Price */}
+              <div className="grid grid-cols-2 gap-3 bg-gray-50/70 p-3.5 rounded-2xl border border-gray-200/70">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Normal Price (PKR) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    required
+                    value={editProduct.price}
+                    onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                  />
+                  <span className="text-[10px] text-gray-400 mt-1 block">Original product price</span>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Sale Price (PKR) <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={editProduct.sale_price}
+                    onChange={(e) => setEditProduct({ ...editProduct, sale_price: e.target.value })}
+                    placeholder="No sale"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                  />
+                  {editProduct.price && editProduct.sale_price && Number(editProduct.sale_price) < Number(editProduct.price) ? (
+                    <span className="text-[10px] text-emerald-600 font-bold mt-1 block">
+                      Save {Math.round(((Number(editProduct.price) - Number(editProduct.sale_price)) / Number(editProduct.price)) * 100)}% off
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 mt-1 block">Leave blank for normal price</span>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                  Unit Price (PKR)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  required
-                  value={editProduct.price}
-                  onChange={(e) => setEditProduct({ ...editProduct, price: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
-                />
+              {/* Size Variants Toggle Section */}
+              <div className="bg-orange-50/40 p-3.5 rounded-2xl border border-orange-200/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-extrabold text-charcoal flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editProduct.has_sizes}
+                        onChange={(e) => setEditProduct({ ...editProduct, has_sizes: e.target.checked })}
+                        className="rounded text-primary-orange focus:ring-primary-orange w-4 h-4 cursor-pointer"
+                      />
+                      <span>Enable Size Variants (Small, Medium, Large)</span>
+                    </label>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      Toggle whether this product has size options (S, M, L)
+                    </p>
+                  </div>
+                </div>
+
+                {editProduct.has_sizes ? (
+                  <div className="space-y-3 pt-2 border-t border-orange-200/60">
+                    <div>
+                      <span className="text-[11px] font-extrabold text-charcoal block">
+                        Available Sizes, Stock & Individual Prices:
+                      </span>
+                      <p className="text-[10px] text-gray-500">
+                        Leave Size Price blank to use Base Price (Rs. {editProduct.price || '0'}).
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {['S', 'M', 'L'].map((szCode) => {
+                        const sizeLabel = szCode === 'S' ? 'Small (S)' : szCode === 'M' ? 'Medium (M)' : 'Large (L)'
+                        const szObj = editProduct.sizes?.find((s) => s.size === szCode) || {
+                          stock: 0,
+                          price: '',
+                          sale_price: '',
+                          is_available: false,
+                        }
+
+                        return (
+                          <div
+                            key={szCode}
+                            className={`p-3 rounded-2xl border transition ${
+                              szObj.is_available
+                                ? 'bg-white border-primary-orange/40 shadow-2xs'
+                                : 'bg-gray-100/60 border-gray-200 opacity-60'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="flex items-center gap-2 text-xs font-bold text-charcoal cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={szObj.is_available}
+                                  onChange={(e) => {
+                                    const updatedSizes = editProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, is_available: e.target.checked } : s
+                                    )
+                                    setEditProduct({ ...editProduct, sizes: updatedSizes })
+                                  }}
+                                  className="rounded text-primary-orange focus:ring-primary-orange w-4 h-4 cursor-pointer"
+                                />
+                                <span className="font-extrabold text-sm">{sizeLabel}</span>
+                              </label>
+                              <span className="text-[10px] text-gray-400 font-semibold">
+                                {szObj.is_available ? 'Available' : 'Disabled'}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 mb-1">
+                                  Stock Units <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  disabled={!szObj.is_available}
+                                  value={szObj.stock}
+                                  onChange={(e) => {
+                                    const updatedSizes = editProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, stock: e.target.value } : s
+                                    )
+                                    setEditProduct({ ...editProduct, sizes: updatedSizes })
+                                  }}
+                                  placeholder="Stock"
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-primary-orange bg-white disabled:bg-gray-100 font-bold"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 mb-1">
+                                  Normal Price
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  disabled={!szObj.is_available}
+                                  value={szObj.price || ''}
+                                  onChange={(e) => {
+                                    const updatedSizes = editProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, price: e.target.value } : s
+                                    )
+                                    setEditProduct({ ...editProduct, sizes: updatedSizes })
+                                  }}
+                                  placeholder={editProduct.price ? `Rs. ${editProduct.price}` : 'Base price'}
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-primary-orange bg-white disabled:bg-gray-100 font-medium"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-gray-600 mb-1">
+                                  Sale Price
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="0.01"
+                                  disabled={!szObj.is_available}
+                                  value={szObj.sale_price || ''}
+                                  onChange={(e) => {
+                                    const updatedSizes = editProduct.sizes.map((s) =>
+                                      s.size === szCode ? { ...s, sale_price: e.target.value } : s
+                                    )
+                                    setEditProduct({ ...editProduct, sizes: updatedSizes })
+                                  }}
+                                  placeholder="Optional"
+                                  className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-primary-orange bg-white disabled:bg-gray-100 font-medium"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="text-[11px] text-gray-500 text-right font-medium">
+                      Total Calculated Stock:{' '}
+                      <strong className="text-charcoal font-bold">
+                        {editProduct.sizes
+                          ?.filter((s) => s.is_available)
+                          ?.reduce((sum, s) => sum + (parseInt(s.stock) || 0), 0)}{' '}
+                        units
+                      </strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                      Stock Units Available
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      required={!editProduct.has_sizes}
+                      value={editProduct.stock}
+                      onChange={(e) => setEditProduct({ ...editProduct, stock: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:border-primary-orange focus:ring-2 focus:ring-primary-orange/15"
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() =>
-                    setEditProduct({ open: false, id: null, name: '', price: '', stock: '' })
+                    setEditProduct({ open: false, id: null, name: '', price: '', sale_price: '', stock: '', has_sizes: false, sizes: [] })
                   }
                   className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
                 >

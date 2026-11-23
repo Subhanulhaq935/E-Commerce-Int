@@ -50,6 +50,7 @@ class OrderRepository:
         quantity: int,
         unit_price: Decimal,
         subtotal: Decimal,
+        size: Optional[str] = None,
     ) -> OrderItem:
         item = OrderItem(
             order_id=order_id,
@@ -58,6 +59,7 @@ class OrderRepository:
             quantity=quantity,
             unit_price=unit_price,
             subtotal=subtotal,
+            size=size,
         )
         db.add(item)
         db.flush()

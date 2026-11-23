@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (
     String,
     Numeric,
@@ -32,6 +32,7 @@ class OrderItem(Base):
         ForeignKey("products.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    size: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     subtotal: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)

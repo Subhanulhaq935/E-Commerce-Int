@@ -253,17 +253,31 @@ export default function Home() {
                 >
                   {/* Floating Category & Stock Badges */}
                   <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
-                    {catName ? (
-                      <span className="bg-charcoal/85 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
-                        {catName}
-                      </span>
-                    ) : <span />}
+                    <div className="flex items-center gap-1.5">
+                      {catName && (
+                        <span className="bg-charcoal/85 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                          {catName}
+                        </span>
+                      )}
+                      {p.has_sizes && (
+                        <span className="bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
+                          Sizes
+                        </span>
+                      )}
+                    </div>
 
-                    {p.stock > 0 && p.stock <= 5 && (
-                      <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-sm">
-                        Only {p.stock} left
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {p.sale_price && Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price) && (
+                        <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                          -{Math.round(((Number(p.price) - Number(p.sale_price)) / Number(p.price)) * 100)}%
+                        </span>
+                      )}
+                      {p.stock > 0 && p.stock <= 5 && (
+                        <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-sm">
+                          Only {p.stock} left
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {imgUrl && (
@@ -335,12 +349,30 @@ export default function Home() {
                   {/* Price & Action CTA */}
                   <div className="mt-5 pt-3.5 border-t border-gray-100 flex items-center justify-between gap-2">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                        Price
-                      </span>
-                      <span className="text-lg font-extrabold text-charcoal">
-                        Rs. {Number(p.price).toLocaleString()}
-                      </span>
+                      {p.sale_price && Number(p.sale_price) > 0 && Number(p.sale_price) < Number(p.price) ? (
+                        <>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                              Sale
+                            </span>
+                            <span className="text-xs text-gray-400 line-through font-semibold">
+                              Rs. {Number(p.price).toLocaleString()}
+                            </span>
+                          </div>
+                          <span className="text-lg font-black text-primary-orange block leading-tight">
+                            Rs. {Number(p.sale_price).toLocaleString()}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                            Price
+                          </span>
+                          <span className="text-lg font-extrabold text-charcoal">
+                            Rs. {Number(p.price).toLocaleString()}
+                          </span>
+                        </>
+                      )}
                     </div>
                     <Link
                       to={`/products/${p.id}`}

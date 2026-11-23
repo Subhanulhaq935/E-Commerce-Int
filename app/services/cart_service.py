@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.cart import Cart
 from app.repositories.cart_repository import CartRepository
 from app.repositories.product_repository import ProductRepository
+from app.services.product_service import ProductService
 from app.schemas.cart import (
     CartItemCreate,
     CartItemResponse,
@@ -23,8 +24,10 @@ class CartService:
         for item in cart.items:
             product = item.product
             if product:
-                unit_price = Decimal(str(product.price))
-                subtotal = unit_price * item.quantity
+                effective_price, original_price = ProductService.get_effective_price(
+                    product, item.size
+                )
+                subtotal = effective_price * item.quantity
                 grand_total += subtotal
 
                 # Primary image select karein
@@ -41,7 +44,9 @@ class CartService:
                         id=item.id,
                         product_id=product.id,
                         product_name=product.name,
-                        unit_price=unit_price,
+                        unit_price=effective_price,
+                        original_price=original_price,
+                        size=item.size,
                         quantity=item.quantity,
                         subtotal=subtotal,
                         image_url=image_url,
@@ -70,9 +75,37 @@ class CartService:
                 detail="Product not found or inactive",
             )
 
+        clean_size = data.size.strip() if data.size else None
+
+        # Validate size requirements
+        if product.has_sizes:
+            if not clean_size:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Please select a size for this product",
+                )
+            # Find matching size variant
+            size_variant = next(
+                (
+                    s
+                    for s in product.sizes
+                    if s.size.strip().lower() == clean_size.lower() and s.is_available
+                ),
+                None,
+            )
+            if not size_variant:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Selected size '{clean_size}' is not available",
+                )
+            available_stock = size_variant.stock
+        else:
+            clean_size = None
+            available_stock = product.stock
+
         cart = CartRepository.get_or_create_cart(db, user_id=user_id)
         existing_item = CartRepository.get_cart_item(
-            db, cart_id=cart.id, product_id=data.product_id
+            db, cart_id=cart.id, product_id=data.product_id, size=clean_size
         )
 
         new_quantity = (
@@ -82,10 +115,11 @@ class CartService:
         )
 
         # Strict Stock Check
-        if new_quantity > product.stock:
+        if new_quantity > available_stock:
+            size_label = f" for size {clean_size}" if clean_size else ""
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Requested quantity is not available in stock",
+                detail=f"Requested quantity is not available in stock{size_label} (Only {available_stock} available)",
             )
 
         if existing_item:
@@ -98,6 +132,7 @@ class CartService:
                 cart_id=cart.id,
                 product_id=data.product_id,
                 quantity=data.quantity,
+                size=clean_size,
             )
 
         fresh_cart = CartRepository.get_or_create_cart(db, user_id=user_id)
@@ -128,11 +163,26 @@ class CartService:
                 detail="Product is no longer available",
             )
 
+        # Determine available stock
+        if product.has_sizes and item.size:
+            size_variant = next(
+                (
+                    s
+                    for s in product.sizes
+                    if s.size.strip().lower() == item.size.strip().lower() and s.is_available
+                ),
+                None,
+            )
+            available_stock = size_variant.stock if size_variant else 0
+        else:
+            available_stock = product.stock
+
         # Strict Stock Check
-        if data.quantity > product.stock:
+        if data.quantity > available_stock:
+            size_label = f" for size {item.size}" if item.size else ""
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Requested quantity is not available in stock",
+                detail=f"Requested quantity is not available in stock{size_label} (Only {available_stock} available)",
             )
 
         CartRepository.update_item_quantity(
@@ -148,7 +198,6 @@ class CartService:
     ) -> CartResponse:
         item = CartRepository.get_item_by_id(db, item_id=item_id)
         if not item:
-            # Idempotent delete: if item is already removed or not found, return fresh cart smoothly
             fresh_cart = CartRepository.get_or_create_cart(db, user_id=user_id)
             return cls._format_cart_response(fresh_cart)
 

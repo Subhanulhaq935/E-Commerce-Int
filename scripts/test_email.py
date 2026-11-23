@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 from email.utils import formataddr, formatdate, make_msgid
 from app.core.config import settings
 
-def test_email():
+def run_test_email():
     brevo_key = (getattr(settings, "BREVO_API_KEY", None) or "").strip()
     email = (settings.SMTP_EMAIL or "").strip()
 
@@ -82,4 +82,4 @@ def test_email():
     return False
 
 if __name__ == "__main__":
-    test_email()
+    run_test_email()

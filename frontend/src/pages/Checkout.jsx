@@ -195,6 +195,7 @@ export default function Checkout() {
         const checkoutItems = items.map((it) => ({
           product_id: it.product_id,
           quantity: it.quantity,
+          size: it.size || null,
         }))
 
         const payload = {
@@ -670,14 +671,21 @@ export default function Checkout() {
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1 border-b border-gray-100 pb-4 mb-4">
               {items.map((it) => (
                 <div
-                  key={it.id || it.product_id}
+                  key={it.id || `${it.product_id}-${it.size || 'nosize'}`}
                   className="flex justify-between items-center text-xs bg-gray-50/80 p-2.5 rounded-xl border border-gray-100"
                 >
                   <div className="min-w-0 pr-2">
                     <span className="font-bold text-charcoal block truncate">
                       {it.product?.name || it.product_name}
                     </span>
-                    <span className="text-gray-400 font-semibold">Qty: {it.quantity}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-gray-400 font-semibold">Qty: {it.quantity}</span>
+                      {it.size && (
+                        <span className="inline-block bg-orange-50 text-primary-orange font-bold text-[10px] px-1.5 py-0.5 rounded border border-orange-200">
+                          Size: {it.size}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="font-extrabold text-charcoal whitespace-nowrap">
                     Rs. {(Number(it.unit_price) * it.quantity).toLocaleString()}

@@ -15,7 +15,10 @@ class CartRepository:
             .options(
                 selectinload(Cart.items)
                 .selectinload(CartItem.product)
-                .selectinload(Product.images)
+                .selectinload(Product.images),
+                selectinload(Cart.items)
+                .selectinload(CartItem.product)
+                .selectinload(Product.sizes),
             )
             .where(Cart.user_id == user_id)
         )
@@ -30,7 +33,10 @@ class CartRepository:
                 .options(
                     selectinload(Cart.items)
                     .selectinload(CartItem.product)
-                    .selectinload(Product.images)
+                    .selectinload(Product.images),
+                    selectinload(Cart.items)
+                    .selectinload(CartItem.product)
+                    .selectinload(Product.sizes),
                 )
                 .where(Cart.user_id == user_id)
             )
@@ -38,15 +44,22 @@ class CartRepository:
 
     @staticmethod
     def get_cart_item(
-        db: Session, cart_id: int, product_id: int
+        db: Session, cart_id: int, product_id: int, size: Optional[str] = None
     ) -> Optional[CartItem]:
-        return db.scalar(
+        clean_size = size.strip() if size else None
+        stmt = (
             select(CartItem)
             .options(
-                selectinload(CartItem.product).selectinload(Product.images)
+                selectinload(CartItem.product).selectinload(Product.images),
+                selectinload(CartItem.product).selectinload(Product.sizes),
             )
             .where(CartItem.cart_id == cart_id, CartItem.product_id == product_id)
         )
+        if clean_size:
+            stmt = stmt.where(CartItem.size == clean_size)
+        else:
+            stmt = stmt.where(CartItem.size.is_(None))
+        return db.scalar(stmt)
 
     @staticmethod
     def get_item_by_id(db: Session, item_id: int) -> Optional[CartItem]:
@@ -54,6 +67,7 @@ class CartRepository:
             select(CartItem)
             .options(
                 selectinload(CartItem.product).selectinload(Product.images),
+                selectinload(CartItem.product).selectinload(Product.sizes),
                 selectinload(CartItem.cart),
             )
             .where(CartItem.id == item_id)
@@ -61,9 +75,10 @@ class CartRepository:
 
     @staticmethod
     def add_item(
-        db: Session, cart_id: int, product_id: int, quantity: int
+        db: Session, cart_id: int, product_id: int, quantity: int, size: Optional[str] = None
     ) -> CartItem:
-        item = CartItem(cart_id=cart_id, product_id=product_id, quantity=quantity)
+        clean_size = size.strip() if size else None
+        item = CartItem(cart_id=cart_id, product_id=product_id, quantity=quantity, size=clean_size)
         db.add(item)
         db.commit()
         db.refresh(item)

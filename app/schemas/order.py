@@ -15,6 +15,7 @@ class CheckoutRequest(BaseModel):
 class GuestCheckoutItem(BaseModel):
     product_id: int
     quantity: int = Field(..., gt=0, description="Quantity must be greater than 0")
+    size: Optional[str] = None
 
 
 class GuestCheckoutRequest(BaseModel):
@@ -43,6 +44,7 @@ class OrderItemResponse(BaseModel):
     id: int
     product_id: int
     product_name: str
+    size: Optional[str] = None
     quantity: int
     unit_price: Decimal
     subtotal: Decimal

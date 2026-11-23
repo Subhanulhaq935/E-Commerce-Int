@@ -20,6 +20,23 @@ import {
   Sparkles,
 } from 'lucide-react'
 
+// Helper to determine default size: Small (S) if in stock, else first available size
+const getDefaultSize = (prod) => {
+  if (!prod?.has_sizes || !prod?.sizes || prod.sizes.length === 0) return null
+
+  // 1. Look for 'S' that is available and in stock (> 0)
+  const sSize = prod.sizes.find((s) => s.size === 'S' && s.is_available && s.stock > 0)
+  if (sSize) return 'S'
+
+  // 2. Otherwise find the first size that is available and in stock (> 0)
+  const firstInStock = prod.sizes.find((s) => s.is_available && s.stock > 0)
+  if (firstInStock) return firstInStock.size
+
+  // 3. Fallback to 'S' (if present) or first size even if 0 stock
+  const fallbackS = prod.sizes.find((s) => s.size === 'S')
+  return fallbackS ? fallbackS.size : prod.sizes[0]?.size || null
+}
+
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -43,10 +60,24 @@ export default function ProductDetail() {
   })
   const [imageError, setImageError] = useState(false)
   const [quantity, setQuantity] = useState(1)
+  const [selectedSize, setSelectedSize] = useState(() => getDefaultSize(initialProduct))
   // If product is already available in cache or navigation state, do NOT show loading (0ms instant display!)
   const [loading, setLoading] = useState(!initialProduct)
   const [addedSuccess, setAddedSuccess] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
+
+  // Ensure default size (Small S or first available) is selected when product loads
+  useEffect(() => {
+    if (product?.has_sizes && product.sizes?.length > 0) {
+      setSelectedSize((prev) => {
+        // If current selection is valid for this product and in stock, keep it
+        if (prev && product.sizes.some((s) => s.size === prev && s.is_available && s.stock > 0)) {
+          return prev
+        }
+        return getDefaultSize(product)
+      })
+    }
+  }, [product?.id, product?.sizes])
 
   useEffect(() => {
     const fetchProductAndReviews = async () => {
@@ -84,14 +115,38 @@ export default function ProductDetail() {
   }, [id])
 
   const handleAddToCart = () => {
+    if (product.has_sizes) {
+      if (!selectedSize) {
+        setMessage({
+          type: 'error',
+          text: 'Please select an available size (Small, Medium, or Large) before adding to cart.',
+        })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3500)
+        return
+      }
+
+      const currentSizeObj = product.sizes?.find((s) => s.size === selectedSize)
+      if (!currentSizeObj || !currentSizeObj.is_available || currentSizeObj.stock <= 0) {
+        setMessage({
+          type: 'error',
+          text: `Size '${selectedSize}' is currently out of stock. Please select another size.`,
+        })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3500)
+        return
+      }
+    }
+
     // 0ms INSTANT REACTION! NO LOADING SPINNER FOR GUESTS & REGISTERED USERS!
     setAddedSuccess(true)
-    setMessage({ type: 'success', text: 'Item added to your cart successfully!' })
+    setMessage({
+      type: 'success',
+      text: `Added to cart (${selectedSize ? `Size: ${selectedSize}` : '1 item'}) successfully!`,
+    })
     setTimeout(() => setAddedSuccess(false), 2000)
     setTimeout(() => setMessage({ type: '', text: '' }), 2500)
 
     // Silently sync with backend (or update guest cart in localStorage)
-    addToCart(product, quantity).catch((err) => {
+    addToCart(product, quantity, selectedSize).catch((err) => {
       setAddedSuccess(false)
       const msg = err.response?.data?.detail || 'Failed to add item to cart'
       setMessage({ type: 'error', text: msg })
@@ -128,6 +183,38 @@ export default function ProductDetail() {
       </div>
     )
   }
+
+  const selectedSizeObj =
+    product.has_sizes && product.sizes && selectedSize
+      ? product.sizes.find((s) => s.size === selectedSize)
+      : null
+
+  const activeNormalPrice =
+    selectedSizeObj && selectedSizeObj.price !== null && selectedSizeObj.price !== undefined
+      ? Number(selectedSizeObj.price)
+      : Number(product.price || 0)
+
+  const activeSalePrice =
+    selectedSizeObj && selectedSizeObj.price !== null && selectedSizeObj.price !== undefined
+      ? selectedSizeObj.sale_price !== null && selectedSizeObj.sale_price !== undefined
+        ? Number(selectedSizeObj.sale_price)
+        : null
+      : product.sale_price !== null && product.sale_price !== undefined
+      ? Number(product.sale_price)
+      : null
+
+  const isSaleActive =
+    activeSalePrice !== null &&
+    activeSalePrice > 0 &&
+    activeSalePrice < activeNormalPrice
+
+  const isCurrentSizeOutOfStock =
+    product.has_sizes &&
+    (!selectedSizeObj || !selectedSizeObj.is_available || selectedSizeObj.stock <= 0)
+
+  const maxAvailableStock = product.has_sizes
+    ? selectedSizeObj?.stock || 0
+    : product.stock || 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -253,17 +340,108 @@ export default function ProductDetail() {
             {/* Price Card */}
             <div className="mt-6 p-5 bg-gray-50/90 border border-gray-200/70 rounded-2xl flex items-baseline justify-between">
               <div>
-                <span className="text-[11px] text-gray-400 block uppercase tracking-wider font-bold">
-                  Special Store Price
-                </span>
-                <span className="text-3xl sm:text-4xl font-black text-charcoal tracking-tight mt-0.5 block">
-                  Rs. {Number(product.price).toLocaleString()}
-                </span>
+                {isSaleActive ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="text-[11px] text-gray-400 uppercase tracking-wider font-bold">
+                        Normal:
+                      </span>
+                      <span className="text-sm sm:text-base font-bold text-gray-400 line-through">
+                        Rs. {activeNormalPrice.toLocaleString()}
+                      </span>
+                      <span className="text-xs font-black text-red-600 bg-red-100/90 px-2 py-0.5 rounded-full">
+                        -{Math.round(((activeNormalPrice - activeSalePrice) / activeNormalPrice) * 100)}% OFF
+                      </span>
+                    </div>
+                    <span className="text-3xl sm:text-4xl font-black text-primary-orange tracking-tight block">
+                      Rs. {activeSalePrice.toLocaleString()}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[11px] text-gray-400 block uppercase tracking-wider font-bold">
+                      {selectedSize ? `Price for Size ${selectedSize}` : 'Special Store Price'}
+                    </span>
+                    <span className="text-3xl sm:text-4xl font-black text-charcoal tracking-tight mt-0.5 block">
+                      Rs. {activeNormalPrice.toLocaleString()}
+                    </span>
+                  </>
+                )}
               </div>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-lg">
                 Free Delivery
               </span>
             </div>
+
+            {/* Optional Size Variant Selector */}
+            {product.has_sizes && product.sizes && product.sizes.length > 0 && (
+              <div className="mt-5 p-4 bg-orange-50/40 border border-orange-200/70 rounded-2xl">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-xs font-extrabold uppercase tracking-wider text-charcoal flex items-center gap-1.5">
+                    <span>Select Size</span>
+                    <span className="text-red-500">*</span>
+                  </label>
+                  {selectedSize ? (
+                    <span className="text-xs font-bold text-primary-orange">
+                      Chosen: <strong className="text-charcoal underline">{selectedSize}</strong>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-amber-700 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-full">
+                      Required
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2.5">
+                  {product.sizes.map((s) => {
+                    const isSelected = selectedSize === s.size
+                    const isOutOfStock = s.stock <= 0 || !s.is_available
+                    const sizeEffectivePrice = s.sale_price || s.price
+                    return (
+                      <button
+                        key={s.id || s.size}
+                        type="button"
+                        disabled={isOutOfStock}
+                        onClick={() => {
+                          setSelectedSize(s.size)
+                          setQuantity(1)
+                          setMessage({ type: '', text: '' })
+                        }}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-2.5 cursor-pointer ${
+                          isOutOfStock
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
+                            : isSelected
+                              ? 'bg-charcoal text-white border-charcoal shadow-md shadow-charcoal/20 ring-2 ring-primary-orange scale-105'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-primary-orange hover:text-primary-orange hover:bg-orange-50/30'
+                        }`}
+                      >
+                        <span className="font-black text-sm">{s.size}</span>
+                        {sizeEffectivePrice && (
+                          <span
+                            className={`text-[11px] font-bold ${
+                              isSelected ? 'text-orange-300' : 'text-primary-orange'
+                            }`}
+                          >
+                            Rs. {Number(sizeEffectivePrice).toLocaleString()}
+                          </span>
+                        )}
+                        {isOutOfStock ? (
+                          <span className="text-[10px] text-red-500 font-bold">(Sold Out)</span>
+                        ) : (
+                          <span
+                            className={`text-[10px] ${
+                              isSelected ? 'text-gray-300' : 'text-gray-400'
+                            }`}
+                          >
+                            ({s.stock} left)
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Description */}
             <div className="py-5 my-2">
@@ -311,7 +489,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {product.stock > 0 ? (
+            {product.stock > 0 && !isCurrentSizeOutOfStock ? (
               <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center">
                 {/* Quantity selector */}
                 <div className="flex items-center justify-between border-2 border-gray-200 rounded-2xl bg-gray-50/50 px-2 py-1">
@@ -323,7 +501,7 @@ export default function ProductDetail() {
                   </button>
                   <span className="px-5 text-base font-extrabold text-charcoal">{quantity}</span>
                   <button
-                    onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                    onClick={() => setQuantity((q) => Math.min(maxAvailableStock, q + 1))}
                     className="w-10 h-10 rounded-xl text-charcoal hover:bg-white hover:shadow-xs transition font-extrabold text-lg cursor-pointer"
                   >
                     +
@@ -355,9 +533,14 @@ export default function ProductDetail() {
             ) : (
               <button
                 disabled
-                className="w-full bg-gray-200 text-gray-500 font-bold py-3.5 rounded-2xl cursor-not-allowed"
+                className="w-full bg-gray-100 border border-gray-200 text-gray-500 font-extrabold py-3.5 px-6 rounded-2xl cursor-not-allowed text-sm flex items-center justify-center gap-2"
               >
-                Item Currently Out of Stock
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <span>
+                  {product.stock <= 0
+                    ? 'Item Currently Out of Stock'
+                    : `Size '${selectedSize || ''}' is Out of Stock`}
+                </span>
               </button>
             )}
           </div>

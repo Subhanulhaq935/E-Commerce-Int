@@ -41,10 +41,16 @@ class EmailService:
         for item in order.items:
             price_formatted = f"Rs. {float(item.unit_price):,.2f}"
             subtotal_formatted = f"Rs. {float(item.subtotal):,.2f}"
+            size_badge = (
+                f' <span style="display: inline-block; font-size: 11px; background-color: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 4px;">Size: {item.size}</span>'
+                if getattr(item, "size", None)
+                else ""
+            )
+            size_text = f" (Size: {item.size})" if getattr(item, "size", None) else ""
             items_rows_html += f"""
             <tr>
               <td style="padding: 12px 14px; border-bottom: 1px solid #edf2f7; font-size: 14px; color: #1a202c;">
-                <strong>{item.product_name}</strong>
+                <strong>{item.product_name}</strong>{size_badge}
               </td>
               <td style="padding: 12px 14px; border-bottom: 1px solid #edf2f7; font-size: 14px; color: #4a5568; text-align: center;">
                 {item.quantity}
@@ -57,7 +63,7 @@ class EmailService:
               </td>
             </tr>
             """
-            items_text_list += f"- {item.product_name} x {item.quantity} = {subtotal_formatted}\n"
+            items_text_list += f"- {item.product_name}{size_text} x {item.quantity} = {subtotal_formatted}\n"
 
         total_formatted = f"Rs. {float(order.total_amount):,.2f}"
         order_date_str = order.created_at.strftime("%B %d, %Y at %I:%M %p") if order.created_at else "Today"

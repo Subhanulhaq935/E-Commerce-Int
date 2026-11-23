@@ -63,16 +63,19 @@ export const CartProvider = ({ children }) => {
   }, [user])
 
   // 100% Optimistic Instant Add to Cart (0ms for both Guests and Registered Buyers)
-  const addToCart = (productOrId, quantity = 1) => {
+  const addToCart = (productOrId, quantity = 1, size = null) => {
     const productId = typeof productOrId === 'object' ? productOrId.id : productOrId
     const productObj = typeof productOrId === 'object' ? productOrId : null
+    const cleanSize = size ? String(size).trim() : null
 
     // 1. INSTANT (0ms) memory & local state update
     let updatedCartObj = null
 
     setCart((prevCart) => {
       const existingItems = prevCart?.items ? [...prevCart.items] : []
-      const existingIndex = existingItems.findIndex((it) => it.product_id === productId)
+      const existingIndex = existingItems.findIndex(
+        (it) => it.product_id === productId && (it.size || null) === cleanSize
+      )
 
       if (existingIndex > -1) {
         const existing = existingItems[existingIndex]
@@ -80,7 +83,36 @@ export const CartProvider = ({ children }) => {
         const subtotal = Number(existing.unit_price) * newQty
         existingItems[existingIndex] = { ...existing, quantity: newQty, subtotal }
       } else if (productObj) {
-        const unitPrice = Number(productObj.price)
+        let unitPrice = Number(productObj.price)
+        let originalPrice = null
+        const hasBaseSale =
+          productObj.sale_price !== null &&
+          productObj.sale_price !== undefined &&
+          Number(productObj.sale_price) > 0 &&
+          Number(productObj.sale_price) < Number(productObj.price)
+
+        if (hasBaseSale) {
+          unitPrice = Number(productObj.sale_price)
+          originalPrice = Number(productObj.price)
+        }
+
+        // Check if chosen size has custom pricing
+        if (cleanSize && productObj.has_sizes && productObj.sizes) {
+          const szObj = productObj.sizes.find(
+            (s) => String(s.size).trim().toLowerCase() === cleanSize.toLowerCase()
+          )
+          if (szObj && szObj.price !== null && szObj.price !== undefined && Number(szObj.price) > 0) {
+            const szHasSale =
+              szObj.sale_price !== null &&
+              szObj.sale_price !== undefined &&
+              Number(szObj.sale_price) > 0 &&
+              Number(szObj.sale_price) < Number(szObj.price)
+
+            unitPrice = szHasSale ? Number(szObj.sale_price) : Number(szObj.price)
+            originalPrice = szHasSale ? Number(szObj.price) : null
+          }
+        }
+
         const primaryImg =
           productObj.images?.find((i) => i.is_primary)?.image_url ||
           productObj.images?.[0]?.image_url
@@ -89,6 +121,8 @@ export const CartProvider = ({ children }) => {
           product_id: productObj.id,
           product_name: productObj.name,
           unit_price: unitPrice,
+          original_price: originalPrice,
+          size: cleanSize,
           quantity: quantity,
           subtotal: unitPrice * quantity,
           image_url: primaryImg,
@@ -123,6 +157,7 @@ export const CartProvider = ({ children }) => {
       .post('/cart/items', {
         product_id: productId,
         quantity,
+        size: cleanSize,
       })
       .then((res) => {
         if (res.data) {

@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (
+    String,
     Integer,
     DateTime,
     ForeignKey,
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 class CartItem(Base):
     __tablename__ = "cart_items"
     __table_args__ = (
-        UniqueConstraint("cart_id", "product_id", name="uq_cart_product"),
+        UniqueConstraint("cart_id", "product_id", "size", name="uq_cart_product_size"),
         CheckConstraint("quantity > 0", name="check_cart_item_quantity_positive"),
     )
 
@@ -31,6 +32,7 @@ class CartItem(Base):
     product_id: Mapped[int] = mapped_column(
         ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    size: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     quantity: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

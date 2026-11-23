@@ -145,17 +145,31 @@ export default function Cart() {
                       state={{ product: item.product }}
                       className="font-bold text-base text-charcoal hover:text-primary-orange transition line-clamp-1"
                     >
-                      {item.product?.name}
+                      {item.product?.name || item.product_name}
                     </Link>
-                    <p className="text-sm font-bold text-gray-600 mt-1">
-                      Rs. {Number(item.unit_price).toLocaleString()}{' '}
-                      <span className="text-xs font-normal text-gray-400">/ unit</span>
-                    </p>
-                    {(item.product?.stock !== undefined || item.stock !== undefined) && (
-                      <span className="inline-block mt-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
-                        {item.product?.stock ?? item.stock} units in stock
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-sm font-bold text-charcoal">
+                        Rs. {Number(item.unit_price).toLocaleString()}
+                        <span className="text-xs font-normal text-gray-400"> / unit</span>
                       </span>
-                    )}
+                      {item.original_price && Number(item.original_price) > Number(item.unit_price) && (
+                        <span className="text-xs text-gray-400 line-through font-semibold">
+                          Rs. {Number(item.original_price).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      {item.size && (
+                        <span className="inline-block text-[11px] font-extrabold text-charcoal bg-gray-100 border border-gray-200/80 px-2 py-0.5 rounded-lg shadow-2xs">
+                          Size: {item.size}
+                        </span>
+                      )}
+                      {(item.product?.stock !== undefined || item.stock !== undefined) && (
+                        <span className="inline-block text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          {item.product?.stock ?? item.stock} in stock
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
