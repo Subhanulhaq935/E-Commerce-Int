@@ -1,6 +1,6 @@
 from typing import Optional, Sequence, Tuple
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.enums import OrderStatus
 from app.models.order import Order
@@ -64,7 +64,7 @@ class ReviewRepository:
     ) -> Sequence[Review]:
         return db.scalars(
             select(Review)
-            .options(selectinload(Review.user))
+            .options(joinedload(Review.user))
             .where(Review.product_id == product_id)
             .order_by(Review.created_at.desc())
             .offset(skip)

@@ -1,6 +1,7 @@
 let cachedProducts = null
 let cachedCategories = null
 const cachedProductDetails = {}
+const cachedProductReviews = {}
 
 export const getCachedProducts = () => cachedProducts
 export const setCachedProducts = (data) => {
@@ -22,4 +23,12 @@ export const getCachedProduct = (id) => {
 
 export const setCachedProduct = (id, data) => {
   cachedProductDetails[id] = data
+}
+
+export const getCachedReviews = (productId) => {
+  return cachedProductReviews[String(productId)] || null
+}
+
+export const setCachedReviews = (productId, reviews) => {
+  cachedProductReviews[String(productId)] = reviews
 }

@@ -1,7 +1,9 @@
 from typing import List, Optional
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.product import Product
 from app.models.user import User
 from app.repositories.product_repository import ProductRepository
 from app.repositories.review_repository import ReviewRepository
@@ -95,8 +97,14 @@ class ReviewService:
         skip: int = 0,
         limit: int = 20,
     ) -> List[ReviewResponse]:
-        product = ProductRepository.get_by_id(db, product_id=product_id)
-        if not product or not product.is_active:
+        # Fast indexed check: does active product exist without loading images & sizes
+        exists = db.scalar(
+            select(Product.id).where(
+                Product.id == product_id,
+                Product.is_active.is_(True),
+            )
+        )
+        if not exists:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found",

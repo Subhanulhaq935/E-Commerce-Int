@@ -2,7 +2,13 @@ import { useState, useEffect, useLayoutEffect } from 'react'
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import api from '../api/client'
 import { resolveImageUrl } from '../utils/imageUrl'
-import { getCachedProduct, setCachedProduct, getCachedCategories } from '../utils/catalogCache'
+import {
+  getCachedProduct,
+  setCachedProduct,
+  getCachedCategories,
+  getCachedReviews,
+  setCachedReviews,
+} from '../utils/catalogCache'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -49,10 +55,12 @@ export default function ProductDetail() {
   const initialCategories = getCachedCategories() || []
   const initialCatName =
     initialCategories.find((c) => c.id === initialProduct?.category_id)?.name || ''
+  const initialReviews = getCachedReviews(id)
 
   const [product, setProduct] = useState(initialProduct || null)
   const [categoryName, setCategoryName] = useState(initialCatName)
-  const [reviews, setReviews] = useState([])
+  const [reviews, setReviews] = useState(initialReviews || [])
+  const [loadingReviews, setLoadingReviews] = useState(!initialReviews)
   const [selectedImage, setSelectedImage] = useState(() => {
     const primary =
       initialProduct?.images?.find((img) => img.is_primary) || initialProduct?.images?.[0]
@@ -105,7 +113,11 @@ export default function ProductDetail() {
       }
 
       const res = await api.post(`/products/${id}/reviews`, payload)
-      setReviews((prev) => [res.data, ...prev])
+      setReviews((prev) => {
+        const nextRev = [res.data, ...prev]
+        setCachedReviews(id, nextRev)
+        return nextRev
+      })
       setReviewMessage({
         type: 'success',
         text: 'Thank you! Your review has been submitted successfully.',
@@ -152,15 +164,46 @@ export default function ProductDetail() {
   }, [product?.id, product?.sizes])
 
   useEffect(() => {
-    const fetchProductAndReviews = async () => {
+    let isMounted = true
+
+    // Reset or load cached reviews immediately on ID change
+    const cached = getCachedReviews(id)
+    if (cached) {
+      setReviews(cached)
+      setLoadingReviews(false)
+    } else {
+      setReviews([])
+      setLoadingReviews(true)
+    }
+
+    // 1. Immediately fetch reviews in parallel (Zero delay - no waiting on product API!)
+    api
+      .get(`/products/${id}/reviews`)
+      .then((revRes) => {
+        if (!isMounted) return
+        setReviews(revRes.data)
+        setCachedReviews(id, revRes.data)
+        setLoadingReviews(false)
+      })
+      .catch((err) => {
+        console.error('Error fetching reviews:', err)
+        if (!isMounted) return
+        setLoadingReviews(false)
+      })
+
+    // 2. Concurrently fetch product details
+    const fetchProduct = async () => {
       try {
         if (!initialProduct) {
           setLoading(true)
         }
         const [prodRes, catRes] = await Promise.all([
           api.get(`/products/${id}`),
-          api.get('/categories/').catch(() => ({ data: [] })),
+          initialCategories.length > 0
+            ? Promise.resolve({ data: initialCategories })
+            : api.get('/categories/').catch(() => ({ data: [] })),
         ])
+        if (!isMounted) return
         setProduct(prodRes.data)
         setCachedProduct(id, prodRes.data)
 
@@ -170,20 +213,18 @@ export default function ProductDetail() {
         const primary =
           prodRes.data.images?.find((img) => img.is_primary) || prodRes.data.images?.[0]
         if (primary && !selectedImage) setSelectedImage(primary.image_url)
-
-        try {
-          const revRes = await api.get(`/products/${id}/reviews`)
-          setReviews(revRes.data)
-        } catch {
-          setReviews([])
-        }
       } catch (err) {
         console.error('Error fetching product:', err)
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
-    fetchProductAndReviews()
+
+    fetchProduct()
+
+    return () => {
+      isMounted = false
+    }
   }, [id])
 
   const handleAddToCart = () => {
@@ -780,7 +821,36 @@ export default function ProductDetail() {
           </form>
         </div>
 
-        {reviews.length === 0 ? (
+        {loadingReviews && reviews.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2].map((n) => (
+              <div
+                key={n}
+                className="p-5 rounded-2xl bg-gray-50/70 border border-gray-200/60 animate-pulse flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-slate-200" />
+                      <div className="space-y-1.5">
+                        <div className="h-3.5 bg-slate-200 rounded w-24" />
+                        <div className="h-2.5 bg-slate-100 rounded w-16" />
+                      </div>
+                    </div>
+                    <div className="h-3 bg-slate-100 rounded w-16" />
+                  </div>
+                  <div className="flex gap-1 mb-2.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <div key={s} className="w-3.5 h-3.5 rounded bg-slate-200" />
+                    ))}
+                  </div>
+                  <div className="h-3 bg-slate-100 rounded w-full mb-1" />
+                  <div className="h-3 bg-slate-100 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : reviews.length === 0 ? (
           <div className="text-center py-10 bg-gray-50/60 rounded-2xl border border-dashed border-gray-200">
             <Star className="w-10 h-10 text-gray-300 mx-auto mb-2" />
             <p className="text-charcoal font-bold text-sm">No reviews yet</p>
