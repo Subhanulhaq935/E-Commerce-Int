@@ -53,10 +53,13 @@ class ProductService:
             skip=skip,
             limit=limit,
         )
-        for p in products:
-            avg_rating, count = ReviewRepository.get_stats(db, product_id=p.id)
-            setattr(p, "average_rating", avg_rating)
-            setattr(p, "review_count", count)
+        if products:
+            product_ids = [p.id for p in products]
+            stats_map = ReviewRepository.get_stats_bulk(db, product_ids)
+            for p in products:
+                avg_rating, count = stats_map.get(p.id, (None, 0))
+                setattr(p, "average_rating", avg_rating)
+                setattr(p, "review_count", count)
         return products
 
     @staticmethod
@@ -80,10 +83,13 @@ class ProductService:
             skip=skip,
             limit=limit,
         )
-        for p in products:
-            avg_rating, count = ReviewRepository.get_stats(db, product_id=p.id)
-            setattr(p, "average_rating", avg_rating)
-            setattr(p, "review_count", count)
+        if products:
+            product_ids = [p.id for p in products]
+            stats_map = ReviewRepository.get_stats_bulk(db, product_ids)
+            for p in products:
+                avg_rating, count = stats_map.get(p.id, (None, 0))
+                setattr(p, "average_rating", avg_rating)
+                setattr(p, "review_count", count)
         return products
 
     @staticmethod

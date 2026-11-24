@@ -81,3 +81,27 @@ class ReviewRepository:
             return None, 0
         avg = round(float(row[0]), 1) if row[0] is not None else None
         return avg, int(row[1])
+
+    @staticmethod
+    def get_stats_bulk(
+        db: Session, product_ids: Sequence[int]
+    ) -> dict[int, Tuple[Optional[float], int]]:
+        if not product_ids:
+            return {}
+        stmt = (
+            select(
+                Review.product_id,
+                func.avg(Review.rating),
+                func.count(Review.id),
+            )
+            .where(Review.product_id.in_(product_ids))
+            .group_by(Review.product_id)
+        )
+        rows = db.execute(stmt).all()
+        result: dict[int, Tuple[Optional[float], int]] = {}
+        for row in rows:
+            pid = row[0]
+            avg = round(float(row[1]), 1) if row[1] is not None else None
+            count = int(row[2]) if row[2] is not None else 0
+            result[pid] = (avg, count)
+        return result
