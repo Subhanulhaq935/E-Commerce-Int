@@ -39,6 +39,21 @@ class CartService:
                     )
                     image_url = primary_img.image_url
 
+                # Available stock calculate karein
+                if product.has_sizes and item.size:
+                    clean_size = item.size.strip().lower()
+                    size_variant = next(
+                        (
+                            s
+                            for s in product.sizes
+                            if s.size.strip().lower() == clean_size and s.is_available
+                        ),
+                        None,
+                    )
+                    stock_for_item = size_variant.stock if size_variant else 0
+                else:
+                    stock_for_item = product.stock if product.stock is not None else 0
+
                 items_response.append(
                     CartItemResponse(
                         id=item.id,
@@ -50,6 +65,7 @@ class CartService:
                         quantity=item.quantity,
                         subtotal=subtotal,
                         image_url=image_url,
+                        available_stock=stock_for_item,
                     )
                 )
 
@@ -115,11 +131,17 @@ class CartService:
         )
 
         # Strict Stock Check
+        if available_stock <= 0:
+            size_label = f" (Size: {clean_size})" if clean_size else ""
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"'{product.name}'{size_label} is currently out of stock",
+            )
         if new_quantity > available_stock:
             size_label = f" for size {clean_size}" if clean_size else ""
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Requested quantity is not available in stock{size_label} (Only {available_stock} available)",
+                detail=f"Requested quantity is not available in stock{size_label} (Only {available_stock} available). Only {available_stock} items are currently available in stock.",
             )
 
         if existing_item:
@@ -178,11 +200,17 @@ class CartService:
             available_stock = product.stock
 
         # Strict Stock Check
+        if available_stock <= 0:
+            size_label = f" (Size: {item.size})" if item.size else ""
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"'{product.name}'{size_label} is currently out of stock",
+            )
         if data.quantity > available_stock:
             size_label = f" for size {item.size}" if item.size else ""
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Requested quantity is not available in stock{size_label} (Only {available_stock} available)",
+                detail=f"Requested quantity is not available in stock{size_label} (Only {available_stock} available). Only {available_stock} items are currently available in stock.",
             )
 
         CartRepository.update_item_quantity(

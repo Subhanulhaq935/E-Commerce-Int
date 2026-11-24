@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../api/client'
-import { useCart } from '../context/CartContext'
+import { useCart, resolveItemStock } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import {
   MapPin,
@@ -155,6 +155,18 @@ export default function Checkout() {
       setError('Your shopping cart is empty.')
       setPlacingOrder(false)
       return
+    }
+
+    // Stock Pre-Validation Check
+    for (const it of items) {
+      const stock = resolveItemStock(it)
+      if (it.quantity > stock) {
+        setError(
+          `Cannot place order: '${it.product_name || 'Item'}'${it.size ? ` (Size: ${it.size})` : ''} exceeds available stock. Only ${stock} items are currently available in stock.`
+        )
+        setPlacingOrder(false)
+        return
+      }
     }
 
     try {

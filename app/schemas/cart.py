@@ -23,6 +23,7 @@ class CartItemResponse(BaseModel):
     quantity: int
     subtotal: Decimal
     image_url: Optional[str] = None
+    available_stock: int = Field(default=0, description="Available stock for this item/size")
 
     model_config = ConfigDict(from_attributes=True)
 

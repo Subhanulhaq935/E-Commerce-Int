@@ -248,22 +248,68 @@ export default function ProductDetail() {
         setTimeout(() => setMessage({ type: '', text: '' }), 3500)
         return
       }
+
+      if (quantity > currentSizeObj.stock) {
+        setMessage({
+          type: 'error',
+          text: `Only ${currentSizeObj.stock} items are currently available in stock.`,
+        })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3500)
+        return
+      }
+    } else {
+      if (product.stock <= 0) {
+        setMessage({
+          type: 'error',
+          text: `${product.name} is currently out of stock.`,
+        })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3500)
+        return
+      }
+
+      if (quantity > product.stock) {
+        setMessage({
+          type: 'error',
+          text: `Only ${product.stock} items are currently available in stock.`,
+        })
+        setTimeout(() => setMessage({ type: '', text: '' }), 3500)
+        return
+      }
+    }
+
+    // Check quantity already in cart
+    const currentInCart =
+      cart?.items?.find(
+        (it) => it.product_id === product.id && (it.size || null) === (selectedSize || null)
+      )?.quantity || 0
+
+    if (currentInCart + quantity > maxAvailableStock) {
+      const remainingCanAdd = Math.max(0, maxAvailableStock - currentInCart)
+      setMessage({
+        type: 'error',
+        text:
+          remainingCanAdd > 0
+            ? `Only ${maxAvailableStock} items are currently available in stock (${currentInCart} already in cart).`
+            : `You already have all ${maxAvailableStock} available items in your cart.`,
+      })
+      setTimeout(() => setMessage({ type: '', text: '' }), 4000)
+      return
     }
 
     // 0ms INSTANT REACTION!
     setAddedSuccess(true)
     setMessage({
       type: 'success',
-      text: `Added to cart (${selectedSize ? `Size: ${selectedSize}` : '1 item'}) successfully!`,
+      text: `Added to cart (${selectedSize ? `Size: ${selectedSize}` : `${quantity} item`}) successfully!`,
     })
     setTimeout(() => setAddedSuccess(false), 2000)
     setTimeout(() => setMessage({ type: '', text: '' }), 2500)
 
     addToCart(product, quantity, selectedSize).catch((err) => {
       setAddedSuccess(false)
-      const msg = err.response?.data?.detail || 'Unable to add item to cart. Please try again.'
+      const msg = err.response?.data?.detail || err.message || 'Unable to add item to cart. Please try again.'
       setMessage({ type: 'error', text: msg })
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+      setTimeout(() => setMessage({ type: '', text: '' }), 3500)
     })
   }
 
@@ -547,7 +593,7 @@ export default function ProductDetail() {
                         disabled={isOutOfStock}
                         onClick={() => {
                           setSelectedSize(s.size)
-                          setQuantity(1)
+                          setQuantity((q) => Math.min(Math.max(1, q), s.stock))
                           setMessage({ type: '', text: '' })
                         }}
                         className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-2.5 cursor-pointer ${
@@ -645,22 +691,39 @@ export default function ProductDetail() {
 
             {product.stock > 0 && !isCurrentSizeOutOfStock ? (
               <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center">
-                {/* Tactile Quantity Stepper */}
+                {/* Tactile Quantity Stepper with strict stock bounds */}
                 <div className="flex items-center justify-between border-2 border-slate-200 rounded-2xl bg-slate-50 px-2 py-1 shadow-2xs">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-10 h-10 rounded-xl text-slate-800 hover:bg-white hover:shadow-xs transition font-black text-lg cursor-pointer flex items-center justify-center"
+                    disabled={quantity <= 1}
+                    className="w-10 h-10 rounded-xl text-slate-800 hover:bg-white hover:shadow-xs transition font-black text-lg cursor-pointer flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed select-none"
                     aria-label="Decrease quantity"
                   >
                     −
                   </button>
-                  <span className="px-5 text-base font-black text-slate-900 tabular-nums">
+                  <span className="px-5 text-base font-black text-slate-900 tabular-nums select-none">
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity((q) => Math.min(maxAvailableStock, q + 1))}
-                    className="w-10 h-10 rounded-xl text-slate-800 hover:bg-white hover:shadow-xs transition font-black text-lg cursor-pointer flex items-center justify-center"
+                    onClick={() => {
+                      if (quantity >= maxAvailableStock) {
+                        setMessage({
+                          type: 'error',
+                          text: `Only ${maxAvailableStock} items are currently available in stock.`,
+                        })
+                        setTimeout(() => setMessage({ type: '', text: '' }), 3000)
+                        return
+                      }
+                      setQuantity((q) => Math.min(maxAvailableStock, q + 1))
+                    }}
+                    disabled={quantity >= maxAvailableStock || maxAvailableStock <= 0}
+                    className="w-10 h-10 rounded-xl text-slate-800 hover:bg-white hover:shadow-xs transition font-black text-lg cursor-pointer flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed select-none"
                     aria-label="Increase quantity"
+                    title={
+                      quantity >= maxAvailableStock
+                        ? `Only ${maxAvailableStock} items are currently available in stock.`
+                        : 'Increase quantity'
+                    }
                   >
                     +
                   </button>

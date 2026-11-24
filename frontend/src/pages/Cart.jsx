@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useCart } from '../context/CartContext'
+import { useCart, resolveItemStock } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { resolveImageUrl } from '../utils/imageUrl'
 import {
@@ -22,8 +22,28 @@ export default function Cart() {
   const navigate = useNavigate()
   const [errorMsg, setErrorMsg] = useState('')
 
-  const handleUpdateQty = (itemId, newQty) => {
-    updateQuantity(itemId, newQty)
+  const handleUpdateQty = (item, newQty) => {
+    const itemStock = resolveItemStock(item)
+    if (newQty > itemStock) {
+      setErrorMsg(`Only ${itemStock} items are currently available in stock.`)
+      setTimeout(() => setErrorMsg(''), 4000)
+      return
+    }
+    setErrorMsg('')
+    updateQuantity(item.id, newQty).catch((err) => {
+      setErrorMsg(err.message || `Only ${itemStock} items are currently available in stock.`)
+      setTimeout(() => setErrorMsg(''), 4000)
+    })
+  }
+
+  const handleIncreaseQty = (item) => {
+    const itemStock = resolveItemStock(item)
+    if (item.quantity >= itemStock) {
+      setErrorMsg(`Only ${itemStock} items are currently available in stock.`)
+      setTimeout(() => setErrorMsg(''), 4000)
+      return
+    }
+    handleUpdateQty(item, item.quantity + 1)
   }
 
   const handleRemove = (itemId) => {
@@ -131,6 +151,7 @@ export default function Cart() {
             const primaryImg =
               item.product?.images?.find((img) => img.is_primary) || item.product?.images?.[0]
             const imgUrl = primaryImg ? resolveImageUrl(primaryImg.image_url) : null
+            const itemStock = resolveItemStock(item)
 
             return (
               <div
@@ -182,12 +203,35 @@ export default function Cart() {
                           Size: {item.size}
                         </span>
                       )}
-                      {(item.product?.stock !== undefined || item.stock !== undefined) && (
-                        <span className="inline-block text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full">
-                          {item.product?.stock ?? item.stock} in stock
-                        </span>
-                      )}
+                      <span
+                        className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                          item.quantity > itemStock
+                            ? 'text-rose-700 bg-rose-50 border border-rose-200'
+                            : itemStock <= 3
+                              ? 'text-amber-800 bg-amber-50 border border-amber-200'
+                              : 'text-emerald-700 bg-emerald-50 border border-emerald-200/60'
+                        }`}
+                      >
+                        {itemStock <= 0 ? 'Out of stock' : `${itemStock} in stock`}
+                      </span>
                     </div>
+
+                    {item.quantity > itemStock && (
+                      <div className="flex items-center justify-between gap-2 p-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold mt-2">
+                        <div className="flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>Only {itemStock} items available.</span>
+                        </div>
+                        {itemStock > 0 && (
+                          <button
+                            onClick={() => handleUpdateQty(item, itemStock)}
+                            className="underline font-black hover:text-rose-900 cursor-pointer"
+                          >
+                            Set to {itemStock}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -195,7 +239,7 @@ export default function Cart() {
                 <div className="flex items-center justify-between w-full sm:w-auto gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
                   <div className="flex items-center border-2 border-slate-200 rounded-xl bg-slate-50 p-0.5 shadow-2xs">
                     <button
-                      onClick={() => handleUpdateQty(item.id, item.quantity - 1)}
+                      onClick={() => handleUpdateQty(item, item.quantity - 1)}
                       className="w-8 h-8 rounded-lg text-slate-800 hover:bg-white hover:shadow-xs transition-all font-black cursor-pointer active:scale-90 select-none flex items-center justify-center text-base"
                       title="Decrease quantity"
                     >
@@ -205,13 +249,14 @@ export default function Cart() {
                       {item.quantity}
                     </span>
                     <button
-                      onClick={() => handleUpdateQty(item.id, item.quantity + 1)}
-                      disabled={
-                        (item.product?.stock && item.quantity >= item.product.stock) ||
-                        (item.stock && item.quantity >= item.stock)
+                      onClick={() => handleIncreaseQty(item)}
+                      disabled={item.quantity >= itemStock}
+                      className="w-8 h-8 rounded-lg text-slate-800 hover:bg-white hover:shadow-xs transition-all font-black disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer active:scale-90 select-none flex items-center justify-center text-base"
+                      title={
+                        item.quantity >= itemStock
+                          ? `Only ${itemStock} items are currently available in stock.`
+                          : 'Increase quantity'
                       }
-                      className="w-8 h-8 rounded-lg text-slate-800 hover:bg-white hover:shadow-xs transition-all font-black disabled:opacity-30 cursor-pointer active:scale-90 select-none flex items-center justify-center text-base"
-                      title="Increase quantity"
                     >
                       +
                     </button>
@@ -279,9 +324,25 @@ export default function Cart() {
               </span>
             </div>
 
+            {items.some((it) => it.quantity > resolveItemStock(it)) && (
+              <div className="mb-3 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs font-bold">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Some items exceed available stock. Please adjust quantities to proceed.</span>
+              </div>
+            )}
+
             <button
-              onClick={() => navigate('/checkout')}
-              className="w-full bg-gradient-to-r from-primary-orange to-orange-600 hover:from-primary-orange-hover hover:to-orange-700 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-base active:scale-[0.98]"
+              onClick={() => {
+                const hasExceeded = items.some((it) => it.quantity > resolveItemStock(it))
+                if (hasExceeded) {
+                  setErrorMsg('Some items in your cart exceed available stock. Please adjust quantities to proceed.')
+                  setTimeout(() => setErrorMsg(''), 4500)
+                  return
+                }
+                navigate('/checkout')
+              }}
+              disabled={items.some((it) => it.quantity > resolveItemStock(it))}
+              className="w-full bg-gradient-to-r from-primary-orange to-orange-600 hover:from-primary-orange-hover hover:to-orange-700 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/35 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer text-base active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4" />

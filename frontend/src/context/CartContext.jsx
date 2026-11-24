@@ -1,8 +1,24 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import api from '../api/client'
 import { useAuth } from './AuthContext'
+import { getCachedProduct } from '../utils/catalogCache'
 
 const CartContext = createContext()
+
+export const resolveItemStock = (item, productObj = null) => {
+  if (typeof item?.available_stock === 'number' && item.available_stock >= 0) {
+    return item.available_stock
+  }
+  const prod = productObj || item?.product || getCachedProduct(item?.product_id)
+  if (!prod) return typeof item?.stock === 'number' ? item.stock : 9999
+  if (prod.has_sizes && item?.size && Array.isArray(prod.sizes)) {
+    const szObj = prod.sizes.find(
+      (s) => String(s.size).trim().toLowerCase() === String(item.size).trim().toLowerCase()
+    )
+    return szObj ? szObj.stock : 0
+  }
+  return typeof prod.stock === 'number' ? prod.stock : 9999
+}
 
 const GUEST_CART_KEY = 'guest_cart'
 
@@ -65,23 +81,66 @@ export const CartProvider = ({ children }) => {
   // 100% Optimistic Instant Add to Cart (0ms for both Guests and Registered Buyers)
   const addToCart = (productOrId, quantity = 1, size = null) => {
     const productId = typeof productOrId === 'object' ? productOrId.id : productOrId
-    const productObj = typeof productOrId === 'object' ? productOrId : null
+    const productObj = typeof productOrId === 'object' ? productOrId : getCachedProduct(productId)
     const cleanSize = size ? String(size).trim() : null
+
+    // Determine available stock
+    let maxStock = 9999
+    if (productObj) {
+      if (productObj.has_sizes && cleanSize && productObj.sizes) {
+        const szObj = productObj.sizes.find(
+          (s) => String(s.size).trim().toLowerCase() === cleanSize.toLowerCase()
+        )
+        maxStock = szObj ? szObj.stock : 0
+      } else {
+        maxStock = typeof productObj.stock === 'number' ? productObj.stock : 9999
+      }
+    }
+
+    if (maxStock <= 0) {
+      const err = new Error(
+        `'${productObj?.name || 'Product'}'${cleanSize ? ` (Size: ${cleanSize})` : ''} is currently out of stock.`
+      )
+      return Promise.reject(err)
+    }
+
+    // Check existing item in cart
+    const existingIndex = (cart?.items || []).findIndex(
+      (it) => it.product_id === productId && (it.size || null) === cleanSize
+    )
+    const existing = existingIndex > -1 ? cart.items[existingIndex] : null
+    const currentQty = existing ? existing.quantity : 0
+    const targetQty = currentQty + quantity
+
+    if (targetQty > maxStock) {
+      const remaining = Math.max(0, maxStock - currentQty)
+      const msg =
+        remaining > 0
+          ? `Only ${maxStock} items are currently available in stock (${currentQty} already in cart).`
+          : `Only ${maxStock} items are currently available in stock.`
+      return Promise.reject(new Error(msg))
+    }
 
     // 1. INSTANT (0ms) memory & local state update
     let updatedCartObj = null
 
     setCart((prevCart) => {
       const existingItems = prevCart?.items ? [...prevCart.items] : []
-      const existingIndex = existingItems.findIndex(
+      const exIndex = existingItems.findIndex(
         (it) => it.product_id === productId && (it.size || null) === cleanSize
       )
 
-      if (existingIndex > -1) {
-        const existing = existingItems[existingIndex]
-        const newQty = existing.quantity + quantity
-        const subtotal = Number(existing.unit_price) * newQty
-        existingItems[existingIndex] = { ...existing, quantity: newQty, subtotal }
+      if (exIndex > -1) {
+        const ex = existingItems[exIndex]
+        const newQty = ex.quantity + quantity
+        const subtotal = Number(ex.unit_price) * newQty
+        existingItems[exIndex] = {
+          ...ex,
+          quantity: newQty,
+          subtotal,
+          available_stock: maxStock,
+          stock: maxStock,
+        }
       } else if (productObj) {
         let unitPrice = Number(productObj.price)
         let originalPrice = null
@@ -126,6 +185,8 @@ export const CartProvider = ({ children }) => {
           quantity: quantity,
           subtotal: unitPrice * quantity,
           image_url: primaryImg,
+          available_stock: maxStock,
+          stock: maxStock,
         })
       }
 
@@ -179,6 +240,14 @@ export const CartProvider = ({ children }) => {
         updateTimers.current.delete(itemId)
       }
       return removeFromCart(itemId)
+    }
+
+    const currentItem = (cart?.items || []).find((it) => it.id === itemId || it.product_id === itemId)
+    if (currentItem) {
+      const maxStock = resolveItemStock(currentItem)
+      if (quantity > maxStock) {
+        return Promise.reject(new Error(`Only ${maxStock} items are currently available in stock.`))
+      }
     }
 
     // 1. INSTANT (0ms) screen update

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 import secrets
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.models.enums import OrderStatus, PaymentStatus, UserRole
 from app.models.order import Order
 from app.models.product import Product
+from app.models.product_size import ProductSize
 from app.models.user import User
 from app.repositories.address_repository import AddressRepository
 from app.repositories.cart_repository import CartRepository
@@ -49,7 +50,7 @@ class OrderService:
             # 3. Product IDs ko ascending order mein sort karein (Deadlock prevention)
             product_ids = sorted([item.product_id for item in cart.items])
 
-            # Row lock: SELECT ... FOR UPDATE
+            # Row lock: SELECT ... FOR UPDATE (Product & ProductSize for strict concurrency & race condition protection)
             locked_products = db.scalars(
                 select(Product)
                 .options(selectinload(Product.sizes))
@@ -58,7 +59,23 @@ class OrderService:
                 .with_for_update()
             ).all()
 
+            db.scalars(
+                select(ProductSize)
+                .where(ProductSize.product_id.in_(product_ids))
+                .order_by(ProductSize.id.asc())
+                .with_for_update()
+            ).all()
+
             products_by_id: Dict[int, Product] = {p.id: p for p in locked_products}
+
+            # Aggregate requested quantities per item (product_id, size) and per product_id
+            requested_by_item: Dict[Tuple[int, Optional[str]], int] = {}
+            requested_by_product: Dict[int, int] = {}
+            for item in cart.items:
+                clean_sz = item.size.strip().lower() if item.size else None
+                key = (item.product_id, clean_sz)
+                requested_by_item[key] = requested_by_item.get(key, 0) + item.quantity
+                requested_by_product[item.product_id] = requested_by_product.get(item.product_id, 0) + item.quantity
 
             # 4. Active status & Stock check for each item
             for item in cart.items:
@@ -68,13 +85,16 @@ class OrderService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Product is not active",
                     )
+                clean_size = item.size.strip().lower() if item.size else None
+                total_item_qty = requested_by_item.get((item.product_id, clean_size), item.quantity)
+                total_prod_qty = requested_by_product.get(item.product_id, item.quantity)
+
                 if product.has_sizes:
                     if not item.size:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"Size selection is required for '{product.name}'",
                         )
-                    clean_size = item.size.strip().lower()
                     size_variant = next(
                         (
                             s
@@ -88,16 +108,26 @@ class OrderService:
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"Size '{item.size}' for '{product.name}' is no longer available",
                         )
-                    if item.quantity > size_variant.stock:
+                    if size_variant.stock <= 0:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Requested quantity for '{product.name}' (Size: {item.size}) exceeds available stock ({size_variant.stock})",
+                            detail=f"'{product.name}' (Size: {item.size}) is currently out of stock",
+                        )
+                    if total_item_qty > size_variant.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' (Size: {item.size}) exceeds available stock ({size_variant.stock}). Only {size_variant.stock} items are currently available in stock.",
                         )
                 else:
-                    if item.quantity > product.stock:
+                    if product.stock <= 0:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Requested quantity for '{product.name}' is not available in stock",
+                            detail=f"'{product.name}' is currently out of stock",
+                        )
+                    if total_prod_qty > product.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' exceeds available stock ({product.stock}). Only {product.stock} items are currently available in stock.",
                         )
 
             # 5. Total calculation (DB prices se, client se nahi - using effective size/sale price)
@@ -209,7 +239,7 @@ class OrderService:
             # 1. Product IDs ko ascending order mein sort karein (Deadlock prevention)
             product_ids = sorted([item.product_id for item in data.items])
 
-            # Row lock: SELECT ... FOR UPDATE
+            # Row lock: SELECT ... FOR UPDATE (Product & ProductSize for strict concurrency & race condition protection)
             locked_products = db.scalars(
                 select(Product)
                 .options(selectinload(Product.sizes))
@@ -218,7 +248,23 @@ class OrderService:
                 .with_for_update()
             ).all()
 
+            db.scalars(
+                select(ProductSize)
+                .where(ProductSize.product_id.in_(product_ids))
+                .order_by(ProductSize.id.asc())
+                .with_for_update()
+            ).all()
+
             products_by_id: Dict[int, Product] = {p.id: p for p in locked_products}
+
+            # Aggregate requested quantities per item (product_id, size) and per product_id
+            requested_by_item: Dict[Tuple[int, Optional[str]], int] = {}
+            requested_by_product: Dict[int, int] = {}
+            for item in data.items:
+                clean_sz = item.size.strip().lower() if item.size else None
+                key = (item.product_id, clean_sz)
+                requested_by_item[key] = requested_by_item.get(key, 0) + item.quantity
+                requested_by_product[item.product_id] = requested_by_product.get(item.product_id, 0) + item.quantity
 
             # 2. Active status & Stock check for each item
             for item in data.items:
@@ -228,13 +274,16 @@ class OrderService:
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"Product #{item.product_id} is not active",
                     )
+                clean_size = item.size.strip().lower() if item.size else None
+                total_item_qty = requested_by_item.get((item.product_id, clean_size), item.quantity)
+                total_prod_qty = requested_by_product.get(item.product_id, item.quantity)
+
                 if product.has_sizes:
                     if not item.size:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"Size selection is required for '{product.name}'",
                         )
-                    clean_size = item.size.strip().lower()
                     size_variant = next(
                         (
                             s
@@ -248,16 +297,26 @@ class OrderService:
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail=f"Size '{item.size}' for '{product.name}' is no longer available",
                         )
-                    if item.quantity > size_variant.stock:
+                    if size_variant.stock <= 0:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Requested quantity for '{product.name}' (Size: {item.size}) exceeds available stock ({size_variant.stock})",
+                            detail=f"'{product.name}' (Size: {item.size}) is currently out of stock",
+                        )
+                    if total_item_qty > size_variant.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' (Size: {item.size}) exceeds available stock ({size_variant.stock}). Only {size_variant.stock} items are currently available in stock.",
                         )
                 else:
-                    if item.quantity > product.stock:
+                    if product.stock <= 0:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Requested quantity for '{product.name}' exceeds available stock ({product.stock})",
+                            detail=f"'{product.name}' is currently out of stock",
+                        )
+                    if total_prod_qty > product.stock:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Requested quantity for '{product.name}' exceeds available stock ({product.stock}). Only {product.stock} items are currently available in stock.",
                         )
 
             # 3. Total calculation (DB prices se calculate karein - using effective size/sale price)
