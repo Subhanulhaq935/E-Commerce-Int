@@ -51,7 +51,7 @@ export default function ProductDetail() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const { addToCart } = useCart()
+  const { cart, addToCart } = useCart()
 
   // Instant preloaded data from navigation state or in-memory catalog cache
   const initialProduct = location.state?.product || getCachedProduct(id)
@@ -72,6 +72,19 @@ export default function ProductDetail() {
   const [imageError, setImageError] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [selectedSize, setSelectedSize] = useState(() => getDefaultSize(initialProduct))
+
+  const selectedSizeObj =
+    product?.has_sizes && product?.sizes && selectedSize
+      ? product.sizes.find((s) => s.size === selectedSize)
+      : null
+
+  const isCurrentSizeOutOfStock =
+    Boolean(product?.has_sizes) &&
+    (!selectedSizeObj || !selectedSizeObj.is_available || selectedSizeObj.stock <= 0)
+
+  const maxAvailableStock = product?.has_sizes
+    ? selectedSizeObj?.stock || 0
+    : product?.stock || 0
   // If product is already available in cache or navigation state, do NOT show loading (0ms instant display!)
   const [loading, setLoading] = useState(!initialProduct)
   const [addedSuccess, setAddedSuccess] = useState(false)
@@ -280,7 +293,7 @@ export default function ProductDetail() {
     // Check quantity already in cart
     const currentInCart =
       cart?.items?.find(
-        (it) => it.product_id === product.id && (it.size || null) === (selectedSize || null)
+        (it) => String(it.product_id) === String(product.id) && (it.size || null) === (selectedSize || null)
       )?.quantity || 0
 
     if (currentInCart + quantity > maxAvailableStock) {
@@ -343,11 +356,6 @@ export default function ProductDetail() {
     )
   }
 
-  const selectedSizeObj =
-    product.has_sizes && product.sizes && selectedSize
-      ? product.sizes.find((s) => s.size === selectedSize)
-      : null
-
   const activeNormalPrice =
     selectedSizeObj && selectedSizeObj.price !== null && selectedSizeObj.price !== undefined
       ? Number(selectedSizeObj.price)
@@ -372,14 +380,6 @@ export default function ProductDetail() {
     : 0
 
   const savingsAmount = isSaleActive ? activeNormalPrice - activeSalePrice : 0
-
-  const isCurrentSizeOutOfStock =
-    product.has_sizes &&
-    (!selectedSizeObj || !selectedSizeObj.is_available || selectedSizeObj.stock <= 0)
-
-  const maxAvailableStock = product.has_sizes
-    ? selectedSizeObj?.stock || 0
-    : product.stock || 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
@@ -689,7 +689,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {product.stock > 0 && !isCurrentSizeOutOfStock ? (
+            {maxAvailableStock > 0 && !isCurrentSizeOutOfStock ? (
               <div className="flex flex-col sm:flex-row gap-3.5 items-stretch sm:items-center">
                 {/* Tactile Quantity Stepper with strict stock bounds */}
                 <div className="flex items-center justify-between border-2 border-slate-200 rounded-2xl bg-slate-50 px-2 py-1 shadow-2xs">

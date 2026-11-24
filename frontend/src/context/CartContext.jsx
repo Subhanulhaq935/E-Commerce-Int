@@ -105,10 +105,11 @@ export const CartProvider = ({ children }) => {
     }
 
     // Check existing item in cart
-    const existingIndex = (cart?.items || []).findIndex(
-      (it) => it.product_id === productId && (it.size || null) === cleanSize
+    const currentCartItems = cart?.items || (!user ? getGuestCart().items : [])
+    const existingIndex = currentCartItems.findIndex(
+      (it) => String(it.product_id) === String(productId) && (it.size || null) === (cleanSize || null)
     )
-    const existing = existingIndex > -1 ? cart.items[existingIndex] : null
+    const existing = existingIndex > -1 ? currentCartItems[existingIndex] : null
     const currentQty = existing ? existing.quantity : 0
     const targetQty = currentQty + quantity
 
@@ -121,64 +122,63 @@ export const CartProvider = ({ children }) => {
       return Promise.reject(new Error(msg))
     }
 
-    // 1. INSTANT (0ms) memory & local state update
-    let updatedCartObj = null
+    // Helper to calculate prices
+    let unitPrice = Number(productObj?.price || 0)
+    let originalPrice = null
+    const hasBaseSale =
+      productObj?.sale_price !== null &&
+      productObj?.sale_price !== undefined &&
+      Number(productObj.sale_price) > 0 &&
+      Number(productObj.sale_price) < Number(productObj.price)
 
-    setCart((prevCart) => {
-      const existingItems = prevCart?.items ? [...prevCart.items] : []
-      const exIndex = existingItems.findIndex(
-        (it) => it.product_id === productId && (it.size || null) === cleanSize
+    if (hasBaseSale) {
+      unitPrice = Number(productObj.sale_price)
+      originalPrice = Number(productObj.price)
+    }
+
+    if (cleanSize && productObj?.has_sizes && productObj?.sizes) {
+      const szObj = productObj.sizes.find(
+        (s) => String(s.size).trim().toLowerCase() === cleanSize.toLowerCase()
+      )
+      if (szObj && szObj.price !== null && szObj.price !== undefined && Number(szObj.price) > 0) {
+        const szHasSale =
+          szObj.sale_price !== null &&
+          szObj.sale_price !== undefined &&
+          Number(szObj.sale_price) > 0 &&
+          Number(szObj.sale_price) < Number(szObj.price)
+
+        unitPrice = szHasSale ? Number(szObj.sale_price) : Number(szObj.price)
+        originalPrice = szHasSale ? Number(szObj.price) : null
+      }
+    }
+
+    const primaryImg =
+      productObj?.images?.find((i) => i.is_primary)?.image_url ||
+      productObj?.images?.[0]?.image_url
+
+    // --- GUEST WORKFLOW ---
+    if (!user) {
+      const guestCart = getGuestCart()
+      const existingItems = Array.isArray(guestCart.items) ? [...guestCart.items] : []
+      const exIdx = existingItems.findIndex(
+        (it) => String(it.product_id) === String(productId) && (it.size || null) === (cleanSize || null)
       )
 
-      if (exIndex > -1) {
-        const ex = existingItems[exIndex]
+      if (exIdx > -1) {
+        const ex = existingItems[exIdx]
         const newQty = ex.quantity + quantity
-        const subtotal = Number(ex.unit_price) * newQty
-        existingItems[exIndex] = {
+        existingItems[exIdx] = {
           ...ex,
           quantity: newQty,
-          subtotal,
+          subtotal: Number(ex.unit_price) * newQty,
           available_stock: maxStock,
           stock: maxStock,
         }
-      } else if (productObj) {
-        let unitPrice = Number(productObj.price)
-        let originalPrice = null
-        const hasBaseSale =
-          productObj.sale_price !== null &&
-          productObj.sale_price !== undefined &&
-          Number(productObj.sale_price) > 0 &&
-          Number(productObj.sale_price) < Number(productObj.price)
-
-        if (hasBaseSale) {
-          unitPrice = Number(productObj.sale_price)
-          originalPrice = Number(productObj.price)
-        }
-
-        // Check if chosen size has custom pricing
-        if (cleanSize && productObj.has_sizes && productObj.sizes) {
-          const szObj = productObj.sizes.find(
-            (s) => String(s.size).trim().toLowerCase() === cleanSize.toLowerCase()
-          )
-          if (szObj && szObj.price !== null && szObj.price !== undefined && Number(szObj.price) > 0) {
-            const szHasSale =
-              szObj.sale_price !== null &&
-              szObj.sale_price !== undefined &&
-              Number(szObj.sale_price) > 0 &&
-              Number(szObj.sale_price) < Number(szObj.price)
-
-            unitPrice = szHasSale ? Number(szObj.sale_price) : Number(szObj.price)
-            originalPrice = szHasSale ? Number(szObj.price) : null
-          }
-        }
-
-        const primaryImg =
-          productObj.images?.find((i) => i.is_primary)?.image_url ||
-          productObj.images?.[0]?.image_url
+      } else {
         existingItems.push({
           id: Date.now(),
-          product_id: productObj.id,
-          product_name: productObj.name,
+          product_id: Number(productId),
+          product_name: productObj?.name || 'Product',
           unit_price: unitPrice,
           original_price: originalPrice,
           size: cleanSize,
@@ -194,31 +194,67 @@ export const CartProvider = ({ children }) => {
         (sum, it) => sum + Number(it.unit_price) * it.quantity,
         0
       )
-
-      updatedCartObj = {
-        ...prevCart,
+      const updatedGuestCart = {
+        ...guestCart,
         items: existingItems,
         total: newTotal,
       }
 
-      if (!user) {
-        saveGuestCart(updatedCartObj)
-      }
-
-      return updatedCartObj
-    })
-
-    // If guest, local storage update is all we need
-    if (!user) {
-      return Promise.resolve(updatedCartObj)
+      saveGuestCart(updatedGuestCart)
+      setCart(updatedGuestCart)
+      return Promise.resolve(updatedGuestCart)
     }
 
-    // 2. Background sync silently with backend for registered user
+    // --- REGISTERED BUYER WORKFLOW ---
+    setCart((prevCart) => {
+      const prev = prevCart || { items: [], total: 0 }
+      const existingItems = prev.items ? [...prev.items] : []
+      const exIndex = existingItems.findIndex(
+        (it) => String(it.product_id) === String(productId) && (it.size || null) === (cleanSize || null)
+      )
+
+      if (exIndex > -1) {
+        const ex = existingItems[exIndex]
+        const newQty = ex.quantity + quantity
+        existingItems[exIndex] = {
+          ...ex,
+          quantity: newQty,
+          subtotal: Number(ex.unit_price) * newQty,
+          available_stock: maxStock,
+          stock: maxStock,
+        }
+      } else {
+        existingItems.push({
+          id: Date.now(),
+          product_id: Number(productId),
+          product_name: productObj?.name || 'Product',
+          unit_price: unitPrice,
+          original_price: originalPrice,
+          size: cleanSize,
+          quantity: quantity,
+          subtotal: unitPrice * quantity,
+          image_url: primaryImg,
+          available_stock: maxStock,
+          stock: maxStock,
+        })
+      }
+
+      const newTotal = existingItems.reduce(
+        (sum, it) => sum + Number(it.unit_price) * it.quantity,
+        0
+      )
+      return {
+        ...prev,
+        items: existingItems,
+        total: newTotal,
+      }
+    })
+
     return api
       .post('/cart/items', {
-        product_id: productId,
+        product_id: Number(productId),
         quantity,
-        size: cleanSize,
+        size: cleanSize || null,
       })
       .then((res) => {
         if (res.data) {
