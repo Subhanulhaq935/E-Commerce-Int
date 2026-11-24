@@ -255,7 +255,7 @@ def main():
 
             # Verify order confirmation appears
             page_buyer.wait_for_selector("h2:has-text('Thank You for Your Order!')", timeout=3000)
-            assert page_buyer.locator("text=#999").is_visible(), "Order #999 should be displayed"
+            assert page_buyer.locator("text=#999").first.is_visible(), "Order #999 should be displayed"
             assert page_buyer.locator("a:has-text('View in My Orders')").is_visible(), "'View in My Orders' button should be displayed"
             assert page_buyer.locator("a:has-text('Continue Shopping')").is_visible(), "'Continue Shopping' button should be displayed"
             print("PASS: Order Confirmed screen displayed successfully with Order #999!")
@@ -277,6 +277,7 @@ def main():
             btn_view_orders.click()
 
             page_buyer.wait_for_url("**/my-orders", timeout=4000)
+            page_buyer.wait_for_selector("h1:has-text('My Orders')", timeout=4000)
             assert "/my-orders" in page_buyer.url, "User should now be on /my-orders"
             assert my_orders_fetched, "Orders should only be fetched after explicit click!"
             print("PASS: Navigated to My Orders and fetched history only upon explicit customer action!")

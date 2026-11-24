@@ -509,34 +509,37 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Executive Admin Header Banner */}
-      <div className="bg-charcoal text-white rounded-3xl p-6 sm:p-8 mb-8 shadow-lg border border-gray-800 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-72 h-72 bg-primary-orange/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-gradient-to-br from-slate-950 via-charcoal to-slate-900 text-white rounded-3xl p-6 sm:p-8 lg:p-9 mb-8 shadow-2xl shadow-slate-950/15 border border-slate-800/90 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden bg-grid-pattern">
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-primary-orange/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 px-3 py-1 rounded-full mb-2">
+          <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-1 rounded-full mb-2.5">
             <ShieldCheck className="w-3.5 h-3.5 text-primary-orange" />
-            <span className="text-[11px] font-bold text-orange-300 uppercase tracking-wider">
+            <span className="text-[11px] font-extrabold text-orange-300 uppercase tracking-widest">
               Single-Vendor Control Center
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Admin Dashboard</h1>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight">
+            Admin Dashboard
+          </h1>
+          <p className="text-slate-300 text-xs sm:text-sm mt-1.5 font-medium">
             Manage store inventory, fulfill customer orders, and oversee user accounts.
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="relative z-10 flex flex-wrap gap-2.5">
+        <div className="relative z-10 flex flex-wrap gap-3">
           <button
             onClick={() => setShowAddCategory(true)}
-            className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer shadow-xs"
+            className="bg-slate-800/90 hover:bg-slate-800 text-white border border-slate-700 text-xs sm:text-sm font-extrabold px-4 py-2.5 rounded-xl flex items-center gap-2 transition cursor-pointer shadow-sm"
           >
             <Layers className="w-4 h-4 text-primary-orange" />
             <span>+ New Category</span>
           </button>
           <button
             onClick={() => setShowAddProduct(true)}
-            className="bg-primary-orange hover:bg-primary-orange-hover text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-orange-500/25 transition cursor-pointer"
+            className="bg-gradient-to-r from-primary-orange to-orange-600 hover:from-primary-orange-hover hover:to-orange-700 text-white text-xs sm:text-sm font-extrabold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-orange-500/25 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>+ New Product</span>
@@ -546,7 +549,7 @@ export default function AdminDashboard() {
 
       {/* Notifications */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-between text-red-600 text-sm font-semibold shadow-2xs">
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between text-rose-600 text-sm font-bold shadow-2xs animate-fadeIn">
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span>{error}</span>
@@ -558,7 +561,7 @@ export default function AdminDashboard() {
       )}
 
       {successMsg && (
-        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-sm font-semibold shadow-2xs">
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-emerald-800 text-sm font-bold shadow-2xs animate-fadeIn">
           <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
@@ -566,49 +569,49 @@ export default function AdminDashboard() {
 
       {/* KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs flex items-start justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-start justify-between">
           <div>
-            <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
               Total Revenue
             </span>
-            <div className="text-2xl font-black text-charcoal mt-1">
+            <div className="text-2xl font-black text-slate-900 mt-1 tabular-nums">
               Rs. {totalRevenue.toLocaleString()}
             </div>
-            <span className="inline-block mt-2 text-[11px] text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="inline-block mt-2 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full font-extrabold">
               Delivered & Paid
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
             <DollarSign className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs flex items-start justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-start justify-between">
           <div>
-            <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
               Total Orders
             </span>
-            <div className="text-2xl font-black text-charcoal mt-1">{orders.length}</div>
-            <span className="inline-block mt-2 text-[11px] text-primary-orange bg-orange-50 px-2.5 py-0.5 rounded-full font-bold">
+            <div className="text-2xl font-black text-slate-900 mt-1 tabular-nums">{orders.length}</div>
+            <span className="inline-block mt-2 text-[11px] text-primary-orange bg-orange-50 border border-orange-200/60 px-2.5 py-0.5 rounded-full font-extrabold">
               {orders.filter((o) => o.status === 'pending').length} Pending
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 text-primary-orange flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-orange-50 border border-orange-100 text-primary-orange flex items-center justify-center flex-shrink-0">
             <Truck className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs flex items-start justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-start justify-between">
           <div>
-            <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
               Active Products
             </span>
-            <div className="text-2xl font-black text-charcoal mt-1">{products.length}</div>
-            <span className="inline-block mt-2 text-[11px] text-gray-600 bg-gray-100 px-2.5 py-0.5 rounded-full font-bold">
+            <div className="text-2xl font-black text-slate-900 mt-1 tabular-nums">{products.length}</div>
+            <span className="inline-block mt-2 text-[11px] text-slate-600 bg-slate-100 border border-slate-200/60 px-2.5 py-0.5 rounded-full font-extrabold">
               {categories.length} Categories
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-gray-100 text-charcoal flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center flex-shrink-0">
             <Package className="w-5 h-5" />
           </div>
         </div>
@@ -616,23 +619,23 @@ export default function AdminDashboard() {
         {/* Out of Stock Alert Card */}
         <div
           onClick={() => setActiveTab('out_of_stock')}
-          className={`p-5 rounded-2xl border shadow-xs flex items-start justify-between cursor-pointer transition-all hover:scale-[1.02] ${
+          className={`p-5 rounded-3xl border shadow-xs flex items-start justify-between cursor-pointer transition-all hover:scale-[1.02] ${
             outOfStockProducts.length > 0
-              ? 'bg-red-50/70 border-red-200/80 hover:border-red-300 ring-2 ring-red-500/10'
-              : 'bg-white border-gray-200/80'
+              ? 'bg-rose-50/70 border-rose-200/80 hover:border-rose-300 ring-2 ring-rose-500/10'
+              : 'bg-white border-slate-200/80'
           }`}
         >
           <div>
-            <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
               Zero Stock Alert
             </span>
-            <div className={`text-2xl font-black mt-1 ${outOfStockProducts.length > 0 ? 'text-red-600' : 'text-charcoal'}`}>
+            <div className={`text-2xl font-black mt-1 tabular-nums ${outOfStockProducts.length > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
               {outOfStockProducts.length}
             </div>
             <span
-              className={`inline-block mt-2 text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+              className={`inline-block mt-2 text-[11px] px-2.5 py-0.5 rounded-full font-extrabold ${
                 outOfStockProducts.length > 0
-                  ? 'text-red-700 bg-red-100/90'
+                  ? 'text-rose-700 bg-rose-100/90'
                   : 'text-emerald-700 bg-emerald-50'
               }`}
             >
@@ -640,9 +643,9 @@ export default function AdminDashboard() {
             </span>
           </div>
           <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
+            className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
               outOfStockProducts.length > 0
-                ? 'bg-red-100 text-red-600'
+                ? 'bg-rose-100 text-rose-600'
                 : 'bg-emerald-50 text-emerald-600'
             }`}
           >
@@ -650,30 +653,30 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs flex items-start justify-between">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-start justify-between">
           <div>
-            <span className="text-[11px] text-gray-400 font-extrabold uppercase tracking-wider">
+            <span className="text-[11px] text-slate-400 font-extrabold uppercase tracking-wider">
               Registered Users
             </span>
-            <div className="text-2xl font-black text-charcoal mt-1">{usersList.length}</div>
-            <span className="inline-block mt-2 text-[11px] text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full font-bold">
+            <div className="text-2xl font-black text-slate-900 mt-1 tabular-nums">{usersList.length}</div>
+            <span className="inline-block mt-2 text-[11px] text-blue-700 bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-full font-extrabold">
               {usersList.filter((u) => u.role === 'buyer').length} Active Buyers
             </span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
             <Users className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* Modern Pill Tabs */}
-      <div className="inline-flex bg-white p-1.5 rounded-2xl border border-gray-200/80 shadow-2xs mb-6 gap-1 flex-wrap">
+      <div className="inline-flex bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-2xs mb-6 gap-1 flex-wrap">
         <button
           onClick={() => setActiveTab('orders')}
           className={`py-2.5 px-5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'orders'
               ? 'bg-charcoal text-white shadow-sm'
-              : 'text-gray-500 hover:text-charcoal hover:bg-gray-50'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
           <Truck className="w-4 h-4 text-primary-orange" />
@@ -685,7 +688,7 @@ export default function AdminDashboard() {
           className={`py-2.5 px-5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'products'
               ? 'bg-charcoal text-white shadow-sm'
-              : 'text-gray-500 hover:text-charcoal hover:bg-gray-50'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
           <Package className="w-4 h-4 text-primary-orange" />
@@ -697,21 +700,21 @@ export default function AdminDashboard() {
           onClick={() => setActiveTab('out_of_stock')}
           className={`py-2.5 px-5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'out_of_stock'
-              ? 'bg-red-600 text-white shadow-sm'
+              ? 'bg-rose-600 text-white shadow-sm'
               : outOfStockProducts.length > 0
-              ? 'text-red-600 bg-red-50 hover:bg-red-100/70 border border-red-200/60'
-              : 'text-gray-500 hover:text-charcoal hover:bg-gray-50'
+              ? 'text-rose-600 bg-rose-50 hover:bg-rose-100/70 border border-rose-200/60'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
-          <AlertTriangle className={`w-4 h-4 ${activeTab === 'out_of_stock' ? 'text-white' : 'text-red-500'}`} />
+          <AlertTriangle className={`w-4 h-4 ${activeTab === 'out_of_stock' ? 'text-white' : 'text-rose-500'}`} />
           <span>Out of Stock</span>
           <span
             className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
               activeTab === 'out_of_stock'
-                ? 'bg-white text-red-600'
+                ? 'bg-white text-rose-600'
                 : outOfStockProducts.length > 0
-                ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-gray-100 text-gray-500'
+                ? 'bg-rose-500 text-white animate-pulse'
+                : 'bg-slate-100 text-slate-500'
             }`}
           >
             {outOfStockProducts.length}
@@ -723,7 +726,7 @@ export default function AdminDashboard() {
           className={`py-2.5 px-5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'users'
               ? 'bg-charcoal text-white shadow-sm'
-              : 'text-gray-500 hover:text-charcoal hover:bg-gray-50'
+              : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
           }`}
         >
           <Users className="w-4 h-4 text-primary-orange" />
@@ -733,17 +736,19 @@ export default function AdminDashboard() {
 
       {/* TAB 1: ORDERS */}
       {activeTab === 'orders' && (
-        <div className="bg-white rounded-3xl border border-gray-200/80 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
           {/* Order Filter Bar */}
-          <div className="p-5 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+          <div className="p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="font-extrabold text-base text-charcoal">Customer Orders</h3>
-              <p className="text-xs text-gray-400">Advance order workflow or restore stock via cancellation</p>
+              <h3 className="font-black text-base text-slate-900">Customer Orders</h3>
+              <p className="text-xs text-slate-400 font-medium">
+                Advance order workflow or restore stock via cancellation
+              </p>
             </div>
             <select
               value={orderStatusFilter}
               onChange={(e) => setOrderStatusFilter(e.target.value)}
-              className="text-xs font-bold border border-gray-200 rounded-xl px-3.5 py-2 bg-gray-50 text-charcoal focus:outline-none focus:border-primary-orange cursor-pointer"
+              className="text-xs font-extrabold border border-slate-200 rounded-xl px-3.5 py-2 bg-slate-50 text-slate-800 focus:outline-none focus:border-primary-orange cursor-pointer"
             >
               <option value="">All Order Statuses</option>
               <option value="pending">Pending</option>
@@ -756,7 +761,7 @@ export default function AdminDashboard() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50/80 text-gray-400 uppercase tracking-wider font-extrabold border-b border-gray-100">
+              <thead className="bg-slate-50/90 text-slate-400 uppercase tracking-wider font-extrabold border-b border-slate-100">
                 <tr>
                   <th className="py-3.5 px-5">Order ID</th>
                   <th className="py-3.5 px-5">Customer</th>
@@ -766,44 +771,44 @@ export default function AdminDashboard() {
                   <th className="py-3.5 px-5 text-right">Workflow Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {filteredOrders.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="py-4 px-5 font-extrabold text-charcoal text-sm">#{ord.id}</td>
+                  <tr key={ord.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-4 px-5 font-black text-slate-900 text-sm">#{ord.id}</td>
                     <td className="py-4 px-5">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-charcoal block">
+                        <span className="font-extrabold text-slate-900 block">
                           {ord.guest_name || ord.buyer?.name || ord.user?.name || 'Customer'}
                         </span>
-                        {Boolean(ord.guest_name || ord.tracking_token) && (
+                        {Boolean(ord.guest_name && !ord.buyer_id) && (
                           <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md">
                             Guest
                           </span>
                         )}
                       </div>
-                      <span className="text-gray-400 text-[11px] block">
+                      <span className="text-slate-400 text-[11px] block">
                         {ord.guest_email || ord.buyer?.email || ord.user?.email || 'No email provided'}
                       </span>
                       {(ord.guest_city || ord.shipping_address?.city) && (
-                        <span className="text-[10px] text-gray-500 font-medium block">
+                        <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
                           📍 {ord.guest_city || ord.shipping_address?.city}
                         </span>
                       )}
                     </td>
                     <td className="py-4 px-5 space-y-1">
                       {ord.items?.map((it) => (
-                        <div key={it.id} className="text-gray-600 text-xs font-medium">
-                          {it.product?.name || `Product #${it.product_id}`}{' '}
+                        <div key={it.id} className="text-slate-600 text-xs font-medium">
+                          {it.product_name || it.product?.name || `Product #${it.product_id}`}{' '}
                           {it.size && (
                             <span className="bg-orange-50 text-primary-orange border border-orange-200 text-[10px] font-bold px-1.5 py-0.5 rounded mx-1">
                               Size: {it.size}
                             </span>
                           )}
-                          × <strong className="text-charcoal">{it.quantity}</strong>
+                          × <strong className="text-slate-900">{it.quantity}</strong>
                         </div>
                       ))}
                     </td>
-                    <td className="py-4 px-5 font-extrabold text-charcoal text-sm">
+                    <td className="py-4 px-5 font-black text-slate-900 text-sm tabular-nums">
                       Rs. {Number(ord.total_amount).toLocaleString()}
                     </td>
                     <td className="py-4 px-5">
@@ -812,7 +817,7 @@ export default function AdminDashboard() {
                           ord.status === 'delivered'
                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
                             : ord.status === 'cancelled'
-                            ? 'bg-red-50 text-red-600 border border-red-200/70'
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200/70'
                             : ord.status === 'shipped'
                             ? 'bg-purple-50 text-purple-700 border border-purple-200/70'
                             : ord.status === 'processing'
@@ -827,7 +832,7 @@ export default function AdminDashboard() {
                       {ord.status === 'pending' && (
                         <button
                           onClick={() => handleUpdateOrderStatus(ord.id, 'processing')}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer shadow-2xs"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-[11px] font-extrabold transition cursor-pointer shadow-xs"
                         >
                           Move to Process
                         </button>
@@ -835,7 +840,7 @@ export default function AdminDashboard() {
                       {ord.status === 'processing' && (
                         <button
                           onClick={() => handleUpdateOrderStatus(ord.id, 'shipped')}
-                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer shadow-2xs"
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-1.5 rounded-xl text-[11px] font-extrabold transition cursor-pointer shadow-xs"
                         >
                           Ship Order
                         </button>
@@ -843,7 +848,7 @@ export default function AdminDashboard() {
                       {ord.status === 'shipped' && (
                         <button
                           onClick={() => handleUpdateOrderStatus(ord.id, 'delivered')}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer shadow-2xs"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-[11px] font-extrabold transition cursor-pointer shadow-xs"
                         >
                           Mark Delivered
                         </button>
@@ -851,7 +856,7 @@ export default function AdminDashboard() {
                       {['pending', 'processing'].includes(ord.status) && (
                         <button
                           onClick={() => handleCancelOrder(ord.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200/70 px-3 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer"
+                          className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/70 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition cursor-pointer"
                         >
                           Cancel
                         </button>
