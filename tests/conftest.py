@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest
 from decimal import Decimal
 from fastapi.testclient import TestClient
@@ -134,3 +135,10 @@ def sample_product(db_session, sample_category):
     db_session.commit()
     db_session.refresh(product)
     return product
+
+
+@pytest.fixture(autouse=True)
+def mock_email_dispatch():
+    """Mock external SMTP and Brevo network calls during automated test suites"""
+    with patch("app.services.email_service.EmailService._dispatch_email", return_value=True) as mock_dispatch:
+        yield mock_dispatch

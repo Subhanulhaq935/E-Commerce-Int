@@ -14,11 +14,14 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
 @router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
 def checkout(
     data: CheckoutRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_buyer),
 ):
     """Cart checkout karein aur single-vendor COD order create karein (Registered Buyer only)"""
-    return OrderService.checkout(db, user_id=current_user.id, data=data)
+    return OrderService.checkout(
+        db, user_id=current_user.id, data=data, background_tasks=background_tasks
+    )
 
 
 @router.post(

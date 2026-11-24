@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -74,11 +74,12 @@ def admin_list_orders(
 def admin_update_order_status(
     id: int,
     data: OrderStatusUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
     return OrderService.update_order_status(
-        db, order_id=id, new_status=data.status
+        db, order_id=id, new_status=data.status, background_tasks=background_tasks
     )
 
 
@@ -90,10 +91,13 @@ def admin_update_order_status(
 )
 def admin_cancel_order(
     id: int,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
-    return AdminService.cancel_order(db, order_id=id)
+    return AdminService.cancel_order(
+        db, order_id=id, background_tasks=background_tasks
+    )
 
 
 @router.get(

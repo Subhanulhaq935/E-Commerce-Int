@@ -21,7 +21,12 @@ from app.services.product_service import ProductService
 
 class OrderService:
     @staticmethod
-    def checkout(db: Session, user_id: int, data: CheckoutRequest) -> Order:
+    def checkout(
+        db: Session,
+        user_id: int,
+        data: CheckoutRequest,
+        background_tasks: Any = None,
+    ) -> Order:
         # 1. Cart load and check (Pehle cart check karein)
         cart = CartRepository.get_or_create_cart(db, user_id=user_id)
         if not cart.items:
@@ -105,12 +110,16 @@ class OrderService:
             delivery_charge = Decimal(str(settings.DELIVERY_CHARGE))
             grand_total = subtotal_sum + delivery_charge
 
-            # 6. Create Order
+            # 6. Generate cryptographically secure tracking token (32 bytes urlsafe = 43 chars)
+            tracking_token = secrets.token_urlsafe(32)
+
+            # Create Order
             order = OrderRepository.create_order(
                 db,
                 buyer_id=user_id,
                 shipping_address_id=data.shipping_address_id,
                 total_amount=grand_total,
+                tracking_token=tracking_token,
             )
 
             # 7. Create Order Items & Deduct Stock
@@ -160,7 +169,21 @@ class OrderService:
             db.commit()
 
             # Return order with all relationships
-            return OrderRepository.get_order_by_id(db, order_id=order.id)
+            refreshed_order = OrderRepository.get_order_by_id(db, order_id=order.id)
+
+            # 11. Automatically send confirmation email asynchronously (Instant UI response)
+            if refreshed_order:
+                if background_tasks:
+                    background_tasks.add_task(EmailService.send_order_confirmation, refreshed_order)
+                else:
+                    import threading
+                    threading.Thread(
+                        target=EmailService.send_order_confirmation,
+                        args=(refreshed_order,),
+                        daemon=True,
+                    ).start()
+
+            return refreshed_order
 
         except HTTPException:
             db.rollback()
@@ -391,7 +414,10 @@ class OrderService:
 
     @staticmethod
     def update_order_status(
-        db: Session, order_id: int, new_status: OrderStatus
+        db: Session,
+        order_id: int,
+        new_status: OrderStatus,
+        background_tasks: Any = None,
     ) -> Order:
         order = OrderRepository.get_order_by_id(db, order_id=order_id)
         if not order:
@@ -420,6 +446,8 @@ class OrderService:
                 detail="Invalid status transition",
             )
 
+        old_status = order.status
+
         # Status update
         order.status = new_status
 
@@ -429,4 +457,23 @@ class OrderService:
             order.payment.paid_at = datetime.now(timezone.utc)
 
         db.commit()
-        return OrderRepository.get_order_by_id(db, order_id=order.id)
+        refreshed_order = OrderRepository.get_order_by_id(db, order_id=order.id)
+
+        # Dispatch status update email asynchronously
+        if refreshed_order and old_status != new_status:
+            if background_tasks:
+                background_tasks.add_task(
+                    EmailService.send_order_status_update,
+                    refreshed_order,
+                    new_status=new_status,
+                    old_status=old_status,
+                )
+            else:
+                import threading
+                threading.Thread(
+                    target=EmailService.send_order_status_update,
+                    args=(refreshed_order, new_status, old_status),
+                    daemon=True,
+                ).start()
+
+        return refreshed_order
