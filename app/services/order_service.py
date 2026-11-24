@@ -36,15 +36,30 @@ class OrderService:
                 detail="Cart is empty",
             )
 
-        # 2. Address check (Must belong to this buyer)
-        address = AddressRepository.get_by_id_and_user(
-            db, address_id=data.shipping_address_id, user_id=user_id
-        )
-        if not address:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid address",
+        # 2. Address / Customer delivery details check
+        address = None
+        if data.shipping_address_id is not None:
+            address = AddressRepository.get_by_id_and_user(
+                db, address_id=data.shipping_address_id, user_id=user_id
             )
+            if not address:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid address",
+                )
+        else:
+            required_fields = [
+                data.guest_name,
+                data.guest_email,
+                data.guest_phone,
+                data.guest_address,
+                data.guest_city,
+            ]
+            if any(not f or not str(f).strip() for f in required_fields):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Please provide a shipping address or fill in all required customer delivery details (Name, Email, Phone, Address, City).",
+                )
 
         try:
             # 3. Product IDs ko ascending order mein sort karein (Deadlock prevention)
@@ -147,8 +162,14 @@ class OrderService:
             order = OrderRepository.create_order(
                 db,
                 buyer_id=user_id,
-                shipping_address_id=data.shipping_address_id,
+                shipping_address_id=address.id if address else None,
                 total_amount=grand_total,
+                guest_name=data.guest_name.strip() if not address and data.guest_name else None,
+                guest_email=str(data.guest_email).strip() if not address and data.guest_email else None,
+                guest_phone=data.guest_phone.strip() if not address and data.guest_phone else None,
+                guest_address=data.guest_address.strip() if not address and data.guest_address else None,
+                guest_city=data.guest_city.strip() if not address and data.guest_city else None,
+                guest_postal_code=data.guest_postal_code.strip() if not address and data.guest_postal_code else None,
                 tracking_token=tracking_token,
             )
 
@@ -478,7 +499,18 @@ class OrderService:
         new_status: OrderStatus,
         background_tasks: Any = None,
     ) -> Order:
-        order = OrderRepository.get_order_by_id(db, order_id=order_id)
+        # Lock order row to prevent concurrent status transition race conditions
+        order = db.scalar(
+            select(Order)
+            .options(
+                selectinload(Order.items),
+                selectinload(Order.payment),
+                selectinload(Order.shipping_address),
+                selectinload(Order.buyer),
+            )
+            .where(Order.id == order_id)
+            .with_for_update()
+        )
         if not order:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -516,6 +548,7 @@ class OrderService:
             order.payment.paid_at = datetime.now(timezone.utc)
 
         db.commit()
+        db.refresh(order)
         refreshed_order = OrderRepository.get_order_by_id(db, order_id=order.id)
 
         # Dispatch status update email asynchronously

@@ -48,18 +48,21 @@ const extractErrorMessage = (
 
 export default function Checkout() {
   const { cart, clearCartState } = useCart()
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
+
+  // Registered non-admin buyers use saved addresses; guests and admins use the customer details form
+  const useCustomerDetailsForm = !user || isAdmin
 
   // Registered user state
   const [addresses, setAddresses] = useState([])
   const [selectedAddressId, setSelectedAddressId] = useState(null)
-  const [loading, setLoading] = useState(Boolean(user))
+  const [loading, setLoading] = useState(Boolean(user && !isAdmin))
   const [placingOrder, setPlacingOrder] = useState(false)
   const [error, setError] = useState('')
   const [orderSuccess, setOrderSuccess] = useState(null)
 
-  // Guest Customer delivery details state
+  // Customer / Guest delivery details state
   const [guestForm, setGuestForm] = useState({
     guest_name: '',
     guest_email: '',
@@ -100,12 +103,12 @@ export default function Checkout() {
   }
 
   useEffect(() => {
-    if (user) {
+    if (user && !isAdmin) {
       fetchAddresses()
     } else {
       setLoading(false)
     }
-  }, [user])
+  }, [user, isAdmin])
 
   const openAddModal = () => {
     setNewAddress({
@@ -170,8 +173,8 @@ export default function Checkout() {
     }
 
     try {
-      if (user) {
-        // --- 1. Registered Buyer Flow ---
+      if (user && !isAdmin) {
+        // --- 1. Registered Buyer Flow (Saved Address) ---
         if (!selectedAddressId) {
           setError('Please select or add a delivery address.')
           setTimeout(() => setError(''), 4000)
@@ -186,7 +189,7 @@ export default function Checkout() {
         clearCartState()
         setOrderSuccess(res.data)
       } else {
-        // --- 2. Guest Customer Flow ---
+        // --- 2. Guest Customer & Admin Checkout Flow (Customer Details Form) ---
         const name = guestForm.guest_name.trim()
         const email = guestForm.guest_email.trim()
         const phone = guestForm.guest_phone.trim()
@@ -208,25 +211,41 @@ export default function Checkout() {
           return
         }
 
-        const checkoutItems = items.map((it) => ({
-          product_id: it.product_id,
-          quantity: it.quantity,
-          size: it.size || null,
-        }))
+        if (user && isAdmin) {
+          // Authenticated Admin placing order via /orders/ -> associated with admin's user account
+          const payload = {
+            guest_name: name,
+            guest_email: email,
+            guest_phone: phone,
+            guest_address: address,
+            guest_city: city,
+            guest_postal_code: postalCode || null,
+          }
+          const res = await api.post('/orders/', payload)
+          clearCartState()
+          setOrderSuccess(res.data)
+        } else {
+          // Unauthenticated Guest placing order via /orders/guest
+          const checkoutItems = items.map((it) => ({
+            product_id: it.product_id,
+            quantity: it.quantity,
+            size: it.size || null,
+          }))
 
-        const payload = {
-          guest_name: name,
-          guest_email: email,
-          guest_phone: phone,
-          guest_address: address,
-          guest_city: city,
-          guest_postal_code: postalCode || null,
-          items: checkoutItems,
+          const payload = {
+            guest_name: name,
+            guest_email: email,
+            guest_phone: phone,
+            guest_address: address,
+            guest_city: city,
+            guest_postal_code: postalCode || null,
+            items: checkoutItems,
+          }
+
+          const res = await api.post('/orders/guest', payload)
+          clearCartState()
+          setOrderSuccess(res.data)
         }
-
-        const res = await api.post('/orders/guest', payload)
-        clearCartState()
-        setOrderSuccess(res.data)
       }
     } catch (err) {
       console.error('Checkout error:', err)
@@ -430,8 +449,8 @@ export default function Checkout() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Address / Guest Info & Payment (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* OPTION A: REGISTERED USER (Saved Address Cards) */}
-          {user ? (
+          {/* OPTION A: REGISTERED BUYER (Saved Address Cards) */}
+          {!useCustomerDetailsForm ? (
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-7">
               <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
                 <div className="flex items-center gap-3">
@@ -532,20 +551,23 @@ export default function Checkout() {
                   </div>
                   <div>
                     <h2 className="text-lg font-black text-slate-900 leading-tight">
-                      Guest Delivery Information
+                      {isAdmin ? 'Customer & Delivery Information' : 'Guest Delivery Information'}
                     </h2>
                     <p className="text-xs text-slate-400 font-medium">
-                      No account required • Order confirmation and live tracking will be emailed to
-                      you
+                      {isAdmin
+                        ? 'Order will be saved to your account and visible in My Orders'
+                        : 'No account required • Order confirmation and live tracking will be emailed to you'}
                     </p>
                   </div>
                 </div>
-                <Link
-                  to="/login"
-                  className="text-xs font-extrabold text-primary-orange hover:underline hidden sm:inline"
-                >
-                  Already have an account? Sign In →
-                </Link>
+                {!user && (
+                  <Link
+                    to="/login"
+                    className="text-xs font-extrabold text-primary-orange hover:underline hidden sm:inline"
+                  >
+                    Already have an account? Sign In →
+                  </Link>
+                )}
               </div>
 
               <div className="space-y-4">

@@ -51,18 +51,13 @@ export const CartProvider = ({ children }) => {
   const updateTimers = useRef(new Map())
 
   const fetchCart = async () => {
-    if (user?.role === 'admin') {
-      setCart(null)
-      return
-    }
-
     if (!user) {
       // Guest: load from localStorage
       setCart(getGuestCart())
       return
     }
 
-    // Registered Buyer: load from backend
+    // Registered User (Buyer or Admin): load from backend
     try {
       setLoading(true)
       const res = await api.get('/cart/')

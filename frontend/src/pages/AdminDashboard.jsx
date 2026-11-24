@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
@@ -38,6 +38,8 @@ export default function AdminDashboard() {
 
   // Data states
   const [orders, setOrders] = useState([])
+  const orderUpdateQueueRef = useRef(new Map())
+  const orderUpdateSeqRef = useRef(new Map())
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [usersList, setUsersList] = useState([])
@@ -133,31 +135,50 @@ export default function AdminDashboard() {
     setTimeout(() => setError(''), 3000)
   }
 
-  // --- Order Status Transitions (Instant Optimistic UI) ---
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    const previousOrders = orders
+  // --- Order Status Transitions (Instant Optimistic UI + Per-Order Sequential Queue) ---
+  const handleUpdateOrderStatus = (orderId, newStatus) => {
+    const targetOrder = orders.find((o) => o.id === orderId)
+    const previousStatus = targetOrder?.status
+
+    // Increment monotonic sequence number for this order
+    const nextSeq = (orderUpdateSeqRef.current.get(orderId) || 0) + 1
+    orderUpdateSeqRef.current.set(orderId, nextSeq)
+
     // 1. Instant optimistic update in local state (0ms UI reaction)
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
     )
     notifySuccess(`Order #${orderId} status updated to ${newStatus}`)
 
-    try {
-      // 2. Perform backend update silently in background
-      const res = await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
-      if (res.data) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, ...res.data } : o))
-        )
-      }
-    } catch (err) {
-      // 3. Rollback on failure
-      setOrders(previousOrders)
-      notifyError(err.response?.data?.detail || 'Failed to update order status')
-    }
+    // 2. Serialize backend PATCH requests per orderId so rapid sequential clicks
+    // (Processing -> Shipped -> Delivered) never race or trigger 400 Invalid transition!
+    const previousPromise = orderUpdateQueueRef.current.get(orderId) || Promise.resolve()
+    const nextPromise = previousPromise
+      .catch(() => {})
+      .then(async () => {
+        try {
+          const res = await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus })
+          if (res.data && orderUpdateSeqRef.current.get(orderId) === nextSeq) {
+            setOrders((prev) =>
+              prev.map((o) => (o.id === orderId ? { ...o, ...res.data } : o))
+            )
+          }
+        } catch (err) {
+          // Only rollback this specific order if it is still the latest action
+          if (orderUpdateSeqRef.current.get(orderId) === nextSeq && previousStatus) {
+            setOrders((prev) =>
+              prev.map((o) => (o.id === orderId ? { ...o, status: previousStatus } : o))
+            )
+          }
+          notifyError(err.response?.data?.detail || 'Failed to update order status')
+        }
+      })
+
+    orderUpdateQueueRef.current.set(orderId, nextPromise)
+    return nextPromise
   }
 
-  const handleCancelOrder = async (orderId) => {
+  const handleCancelOrder = (orderId) => {
     if (
       !window.confirm(
         `Are you sure you want to cancel Order #${orderId}? Reserved items will be restored to inventory.`
@@ -165,24 +186,41 @@ export default function AdminDashboard() {
     )
       return
 
-    const previousOrders = orders
+    const targetOrder = orders.find((o) => o.id === orderId)
+    const previousStatus = targetOrder?.status
+
+    const nextSeq = (orderUpdateSeqRef.current.get(orderId) || 0) + 1
+    orderUpdateSeqRef.current.set(orderId, nextSeq)
+
     // Instant optimistic update (0ms UI reaction)
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: 'cancelled' } : o))
     )
     notifySuccess(`Order #${orderId} cancelled and stock restored.`)
 
-    try {
-      const res = await api.patch(`/admin/orders/${orderId}/cancel`)
-      if (res.data) {
-        setOrders((prev) =>
-          prev.map((o) => (o.id === orderId ? { ...o, ...res.data } : o))
-        )
-      }
-    } catch (err) {
-      setOrders(previousOrders)
-      notifyError(err.response?.data?.detail || 'Failed to cancel order')
-    }
+    const previousPromise = orderUpdateQueueRef.current.get(orderId) || Promise.resolve()
+    const nextPromise = previousPromise
+      .catch(() => {})
+      .then(async () => {
+        try {
+          const res = await api.patch(`/admin/orders/${orderId}/cancel`)
+          if (res.data && orderUpdateSeqRef.current.get(orderId) === nextSeq) {
+            setOrders((prev) =>
+              prev.map((o) => (o.id === orderId ? { ...o, ...res.data } : o))
+            )
+          }
+        } catch (err) {
+          if (orderUpdateSeqRef.current.get(orderId) === nextSeq && previousStatus) {
+            setOrders((prev) =>
+              prev.map((o) => (o.id === orderId ? { ...o, status: previousStatus } : o))
+            )
+          }
+          notifyError(err.response?.data?.detail || 'Failed to cancel order')
+        }
+      })
+
+    orderUpdateQueueRef.current.set(orderId, nextPromise)
+    return nextPromise
   }
 
   // --- Product Management ---

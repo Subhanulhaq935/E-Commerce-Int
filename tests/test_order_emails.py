@@ -359,3 +359,63 @@ def test_guest_checkout_and_status_update_email(client, admin_token, sample_prod
     kwargs_status = mock_email_dispatch.call_args.kwargs
     assert kwargs_status["recipient_email"] == "guest.customer@example.com"
     assert f"Order #{guest_order_id} is Now Processing" in kwargs_status["subject"]
+
+
+def test_admin_checkout_email_uses_checkout_form_email(client, admin_token, sample_product, mock_email_dispatch):
+    """Admin placing an order via checkout form sends confirmation and status emails to checkout email, not admin profile email"""
+    # 1. Admin adds item to cart
+    add_res = client.post(
+        "/cart/items",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"product_id": sample_product.id, "quantity": 1},
+    )
+    assert add_res.status_code == 200
+
+    # 2. Admin places order entering a different customer/contact email in checkout form
+    mock_email_dispatch.reset_mock()
+    order_res = client.post(
+        "/orders/",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "guest_name": "Checkout Recipient",
+            "guest_email": "checkout.recipient@example.com",
+            "guest_phone": "03001112233",
+            "guest_address": "House 99, Model Town",
+            "guest_city": "Lahore",
+            "guest_postal_code": "54000",
+        },
+    )
+    assert order_res.status_code == 201
+    order_data = order_res.json()
+    order_id = order_data["id"]
+    assert order_data["buyer_id"] is not None
+    assert order_data["guest_email"] == "checkout.recipient@example.com"
+
+    # Confirmation email must go to checkout.recipient@example.com (not admin@test.com)
+    assert mock_email_dispatch.called
+    assert mock_email_dispatch.call_count == 1
+    kwargs = mock_email_dispatch.call_args.kwargs
+    assert kwargs["recipient_email"] == "checkout.recipient@example.com"
+    assert kwargs["customer_name"] == "Checkout Recipient"
+    assert f"Order #{order_id} Confirmed" in kwargs["subject"]
+
+    # 3. Admin updates order status -> status email must also go to checkout.recipient@example.com
+    mock_email_dispatch.reset_mock()
+    status_res = client.patch(
+        f"/admin/orders/{order_id}/status",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"status": "processing"},
+    )
+    assert status_res.status_code == 200
+    assert mock_email_dispatch.called
+    kwargs_status = mock_email_dispatch.call_args.kwargs
+    assert kwargs_status["recipient_email"] == "checkout.recipient@example.com"
+    assert f"Order #{order_id} is Now Processing" in kwargs_status["subject"]
+
+    # 4. Order appears in Admin's My Orders
+    my_orders_res = client.get(
+        "/orders/my-orders",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert my_orders_res.status_code == 200
+    assert any(o["id"] == order_id for o in my_orders_res.json())

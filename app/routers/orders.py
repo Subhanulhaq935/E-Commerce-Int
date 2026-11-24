@@ -16,9 +16,9 @@ def checkout(
     data: CheckoutRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_buyer),
+    current_user: User = Depends(get_current_user),
 ):
-    """Cart checkout karein aur single-vendor COD order create karein (Registered Buyer only)"""
+    """Cart checkout karein aur single-vendor COD order create karein (Authenticated Buyer or Admin)"""
     return OrderService.checkout(
         db, user_id=current_user.id, data=data, background_tasks=background_tasks
     )
@@ -58,9 +58,9 @@ def get_my_orders(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_buyer),
+    current_user: User = Depends(get_current_user),
 ):
-    """Apne tamam orders ki history dekhain (Buyer only)"""
+    """Apne tamam orders ki history dekhain (Authenticated user)"""
     return OrderService.get_buyer_orders(
         db, buyer_id=current_user.id, skip=skip, limit=limit
     )

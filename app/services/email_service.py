@@ -19,23 +19,23 @@ class EmailService:
         Extracts recipient information, items, address, and tracking link
         for either an authenticated buyer or a guest customer.
         """
-        # 1. Recipient email: Buyer account email first, fallback to guest_email
+        # 1. Recipient email: Explicit checkout/contact email (guest_email) first, fallback to buyer account email
         recipient_email = None
-        if getattr(order, "buyer", None) and getattr(order.buyer, "email", None):
-            recipient_email = order.buyer.email.strip()
-        elif getattr(order, "guest_email", None):
+        if getattr(order, "guest_email", None) and order.guest_email.strip():
             recipient_email = order.guest_email.strip()
+        elif getattr(order, "buyer", None) and getattr(order.buyer, "email", None):
+            recipient_email = order.buyer.email.strip()
 
         if not recipient_email:
             logger.warning(f"Order #{order.id} has no recipient email. Skipping email dispatch.")
             return None
 
-        # 2. Customer Name
+        # 2. Customer Name (explicit checkout name first, fallback to buyer or shipping address)
         customer_name = None
-        if getattr(order, "buyer", None) and getattr(order.buyer, "name", None):
-            customer_name = order.buyer.name.strip()
-        elif getattr(order, "guest_name", None):
+        if getattr(order, "guest_name", None) and order.guest_name.strip():
             customer_name = order.guest_name.strip()
+        elif getattr(order, "buyer", None) and getattr(order.buyer, "name", None):
+            customer_name = order.buyer.name.strip()
         elif getattr(order, "shipping_address", None) and getattr(order.shipping_address, "full_name", None):
             customer_name = order.shipping_address.full_name.strip()
         else:

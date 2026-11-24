@@ -96,33 +96,43 @@ export default function Navbar() {
             <span>Catalog</span>
           </Link>
 
-          {/* Cart Button (Buyers / Guests) */}
-          {!isAdmin && (
-            <Link
-              to="/cart"
-              className={`relative px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-xs sm:text-sm font-bold ${
-                isActive('/cart')
-                  ? 'bg-primary-orange/15 text-primary-orange ring-1 ring-primary-orange/30'
-                  : 'text-slate-200 hover:text-white hover:bg-white/5 border border-slate-800/80'
-              }`}
-              title="Shopping Cart"
-            >
-              <div className="relative">
-                <ShoppingCart className="w-4.5 h-4.5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2.5 bg-primary-orange text-white text-[10px] font-black min-w-4.5 h-4.5 px-1 rounded-full flex items-center justify-center ring-2 ring-charcoal shadow-md">
-                    {cartCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden lg:inline">Cart</span>
-            </Link>
-          )}
+          {/* Cart Button (All Users: Buyers, Guests, Admins) */}
+          <Link
+            to="/cart"
+            className={`relative px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-2 text-xs sm:text-sm font-bold ${
+              isActive('/cart')
+                ? 'bg-primary-orange/15 text-primary-orange ring-1 ring-primary-orange/30'
+                : 'text-slate-200 hover:text-white hover:bg-white/5 border border-slate-800/80'
+            }`}
+            title="Shopping Cart"
+          >
+            <div className="relative">
+              <ShoppingCart className="w-4.5 h-4.5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2.5 bg-primary-orange text-white text-[10px] font-black min-w-4.5 h-4.5 px-1 rounded-full flex items-center justify-center ring-2 ring-charcoal shadow-md">
+                  {cartCount}
+                </span>
+              )}
+            </div>
+            <span className="hidden lg:inline">Cart</span>
+          </Link>
 
           {/* Auth State */}
           {user ? (
             <div className="flex items-center space-x-2.5 lg:space-x-3 pl-3 ml-1 border-l border-slate-800">
-              {isAdmin ? (
+              <Link
+                to="/my-orders"
+                className={`text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  isActive('/my-orders')
+                    ? 'bg-white/10 text-primary-orange shadow-inner ring-1 ring-white/10'
+                    : 'text-slate-200 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Package className="w-4 h-4 text-primary-orange" />
+                <span>My Orders</span>
+              </Link>
+
+              {isAdmin && (
                 <Link
                   to="/admin"
                   className={`px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all shadow-sm ${
@@ -133,18 +143,6 @@ export default function Navbar() {
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Admin Panel</span>
-                </Link>
-              ) : (
-                <Link
-                  to="/my-orders"
-                  className={`text-xs sm:text-sm font-bold px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 ${
-                    isActive('/my-orders')
-                      ? 'bg-white/10 text-primary-orange shadow-inner ring-1 ring-white/10'
-                      : 'text-slate-200 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Package className="w-4 h-4 text-primary-orange" />
-                  <span>My Orders</span>
                 </Link>
               )}
 
@@ -195,21 +193,19 @@ export default function Navbar() {
 
         {/* Mobile Action Controls */}
         <div className="flex md:hidden items-center gap-2">
-          {!isAdmin && (
-            <Link
-              to="/cart"
-              onClick={closeMenu}
-              className="relative p-2.5 text-slate-200 hover:text-primary-orange bg-slate-800/70 border border-slate-700/70 rounded-xl"
-              title="Cart"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-primary-orange text-white text-[10px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center ring-2 ring-charcoal">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-          )}
+          <Link
+            to="/cart"
+            onClick={closeMenu}
+            className="relative p-2.5 text-slate-200 hover:text-primary-orange bg-slate-800/70 border border-slate-700/70 rounded-xl"
+            title="Cart"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-primary-orange text-white text-[10px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center ring-2 ring-charcoal">
+                {cartCount}
+              </span>
+            )}
+          </Link>
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -280,30 +276,28 @@ export default function Navbar() {
               <ChevronRight className="w-4 h-4 text-slate-500" />
             </Link>
 
-            {!isAdmin && (
-              <Link
-                to="/cart"
-                onClick={closeMenu}
-                className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition ${
-                  isActive('/cart')
-                    ? 'bg-primary-orange/15 text-primary-orange border border-primary-orange/30'
-                    : 'text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <span className="flex items-center gap-2.5">
-                  <ShoppingCart className="w-4 h-4 text-primary-orange" />
-                  <span>Shopping Cart</span>
-                  {cartCount > 0 && (
-                    <span className="bg-primary-orange text-white text-[10px] px-2 py-0.5 rounded-full font-black">
-                      {cartCount}
-                    </span>
-                  )}
-                </span>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-              </Link>
-            )}
+            <Link
+              to="/cart"
+              onClick={closeMenu}
+              className={`flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition ${
+                isActive('/cart')
+                  ? 'bg-primary-orange/15 text-primary-orange border border-primary-orange/30'
+                  : 'text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              <span className="flex items-center gap-2.5">
+                <ShoppingCart className="w-4 h-4 text-primary-orange" />
+                <span>Shopping Cart</span>
+                {cartCount > 0 && (
+                  <span className="bg-primary-orange text-white text-[10px] px-2 py-0.5 rounded-full font-black">
+                    {cartCount}
+                  </span>
+                )}
+              </span>
+              <ChevronRight className="w-4 h-4 text-slate-500" />
+            </Link>
 
-            {user && !isAdmin && (
+            {user && (
               <Link
                 to="/my-orders"
                 onClick={closeMenu}

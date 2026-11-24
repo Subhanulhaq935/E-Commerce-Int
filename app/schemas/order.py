@@ -9,7 +9,13 @@ from app.schemas.user import UserResponse
 
 
 class CheckoutRequest(BaseModel):
-    shipping_address_id: int
+    shipping_address_id: Optional[int] = None
+    guest_name: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    guest_email: Optional[EmailStr] = None
+    guest_phone: Optional[str] = Field(default=None, min_length=7, max_length=50)
+    guest_address: Optional[str] = Field(default=None, min_length=5, max_length=500)
+    guest_city: Optional[str] = Field(default=None, min_length=2, max_length=100)
+    guest_postal_code: Optional[str] = Field(default=None, max_length=20)
 
 
 class GuestCheckoutItem(BaseModel):
